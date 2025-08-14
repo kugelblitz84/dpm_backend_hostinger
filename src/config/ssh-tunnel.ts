@@ -6,6 +6,7 @@ const {
   SSH_PORT = "22",
   SSH_USERNAME,
   SSH_PRIVATE_KEY_B64,
+  SSH_PRIVATE_KEY_PASSPHRASE,
   DB_REMOTE_HOST = "127.0.0.1",
   DB_REMOTE_PORT = "3306",
   TUNNEL_LOCAL_PORT = "3307",
@@ -49,6 +50,7 @@ export async function createSshTunnel(): Promise<void> {
       port: parseInt(SSH_PORT, 10),
       username: SSH_USERNAME,
       privateKey,
+      passphrase: SSH_PRIVATE_KEY_PASSPHRASE, // <<< Add this
     });
   });
 }
