@@ -5,47 +5,50 @@ import { Server } from "socket.io";
 import app, { corsOptions } from "./app/app";
 import urlJoin from "url-join";
 import {
-	port,
-	apiDocsUrl,
-	serverBaseUrl,
-	nodeEnv,
+  port,
+  apiDocsUrl,
+  serverBaseUrl,
+  nodeEnv,
 } from "./config/dotenv.config";
 import { initializeDatabase } from "./config/database.config";
 import SocketService from "./service/socket.service";
+import { createSshTunnel } from "./config/ssh-tunnel"; // new SSH tunnel module
 
 const server = http.createServer(app);
 
 export const io = new Server(server, {
-	cors: corsOptions,
+  cors: corsOptions,
 });
 
 const initializeServer = async (): Promise<void> => {
-	try {
-		io.on("connection", (socket) => {
-			
-			const socketService = new SocketService(socket.id);
+  try {
+    // 1️⃣ Start SSH tunnel first (for MySQL)
+    await createSshTunnel();
 
-			socket.on("login-staff", socketService.loginStaff);
+    // 2️⃣ Initialize database connection (now tunnel is active)
+    await initializeDatabase();
 
-			socket.on("logout-staff", socketService.logoutStaff);
+    // 3️⃣ Socket.io connections
+    io.on("connection", (socket) => {
+      const socketService = new SocketService(socket.id);
 
-			socket.on("disconnect", () => {
+      socket.on("login-staff", socketService.loginStaff);
 
-				socketService.disconnectStaff();
-			});
-		});
+      socket.on("logout-staff", socketService.logoutStaff);
 
-		await initializeDatabase();
-		try {
-			server.listen(port, () => {
-				console.log(`Server is running on port ${port}`.blue);
-			});
-		} catch (err: any) {
-			
-		}
-	} catch (err: any) {
-		
-	}
+      socket.on("disconnect", () => {
+        socketService.disconnectStaff();
+      });
+    });
+
+    // 4️⃣ Start HTTP server
+    server.listen(port, () => {
+      console.log(`Server is running on port ${port}`.blue);
+    });
+  } catch (err: any) {
+    console.error("Server initialization error:".red, err);
+    process.exit(1); // fail fast on Heroku
+  }
 };
 
 initializeServer();
