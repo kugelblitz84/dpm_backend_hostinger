@@ -16,7 +16,7 @@ export const serverBaseUrl: string =
 
 export const apiKey: string = process.env.API_KEY || "";
 export const serverUrlPrefix: string = process.env.SERVER_URL_PREFIX || "";
-export const port: string = process.env.SERVER_PORT || "";
+export const port: number = parseInt(process.env.PORT || "3000", 10);
 export const apiDocsUrl: string = process.env.API_DOCS_URL || "";
 
 export const dbName: string =
