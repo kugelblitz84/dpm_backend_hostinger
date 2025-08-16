@@ -97,8 +97,7 @@ class ProductService {
 					});
 
 					// Create product variant details
-					variant.variantDetails.map(async (detail) => {
-						// variationName, variationItemValue
+					for (const detail of variant.variantDetails) {
 						const possibleVariation = await Variation.findOne({
 							where: {
 								productId: product.productId,
@@ -112,22 +111,29 @@ class ProductService {
 						if (possibleVariation) {
 							const possibleVariationItem = possibleVariation
 								.toJSON()
-								.variationItems.filter(
+								.variationItems.find(
 									(variationItem: VariationItem) =>
 										variationItem.value ===
 										detail.variationItemValue,
 								);
 
-							ProductVariantDetail.create({
-								variationItemId:
-									possibleVariationItem[0].variationItemId,
-								productVariantId:
-									createdVariant.productVariantId,
-							});
+							if (possibleVariationItem) {
+								await ProductVariantDetail.create({
+									variationItemId:
+										possibleVariationItem.variationItemId,
+									productVariantId:
+										createdVariant.productVariantId,
+								});
+							} else {
+								console.warn(
+									`⚠️ No variation item found for ${detail.variationName} = ${detail.variationItemValue}`,
+								);
+							}
 						}
-					});
+					}
 				}
 			}
+
 
 			if (tags.length > 0) {
 				await ProductTag.bulkCreate(
