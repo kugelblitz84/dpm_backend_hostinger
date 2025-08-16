@@ -17,7 +17,12 @@ import { createSshTunnel } from "./config/ssh-tunnel"; // new SSH tunnel module
 const server = http.createServer(app);
 
 export const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+        origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    //allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
 });
 
 const initializeServer = async (): Promise<void> => {
@@ -30,6 +35,7 @@ const initializeServer = async (): Promise<void> => {
 
     // 3️⃣ Socket.io connections
     io.on("connection", (socket) => {
+      
       const socketService = new SocketService(socket.id);
 
       socket.on("login-staff", socketService.loginStaff);
