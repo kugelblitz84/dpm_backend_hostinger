@@ -17,12 +17,12 @@ import { createSshTunnel } from "./config/ssh-tunnel"; // new SSH tunnel module
 const server = http.createServer(app);
 
 export const io = new Server(server, {
-  cors: {
-        origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    //allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  },
+	cors: {
+		origin: "*",
+		methods: ["GET", "POST", "PUT", "DELETE"],
+		//allowedHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+	},
 });
 
 const initializeServer = async (): Promise<void> => {
