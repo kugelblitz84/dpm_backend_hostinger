@@ -67,9 +67,9 @@ class OrderController {
 				// payments: (req as any).validatedValue.payments,
 			};
 
-			// Documentation: Override staffId if the request comes from an authenticated staff member.
-			// This ensures that if an agent creates an order, their staffId is associated with it.
-			if ((req as any).staff?.staffId) {
+			// Documentation: Override staffId with authenticated staff only when the request
+			// did not explicitly provide a staffId. This preserves frontend-supplied staffId.
+			if ((req as any).staff?.staffId && (req as any).validatedValue.staffId == null) {
 				newOrder.staffId = (req as any).staff.staffId;
 			}
 
@@ -230,9 +230,9 @@ class OrderController {
 				orderItems: JSON.parse((req as any).validatedValue.orderItems),
 			};
 
-			// Documentation: Override staffId if the request comes from an authenticated staff member.
-			// This ensures that if an agent creates an order request, their staffId is associated with it.
-			if ((req as any).staff?.staffId) {
+			// Documentation: Override staffId with authenticated staff only when the request
+			// did not explicitly provide a staffId. This preserves frontend-supplied staffId.
+			if ((req as any).staff?.staffId && (req as any).validatedValue.staffId == null) {
 				newOrder.staffId = (req as any).staff.staffId;
 			}
 
