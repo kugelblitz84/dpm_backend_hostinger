@@ -122,12 +122,17 @@ class OrderService {
 
 			// Documentation: Only assign a random staff if no staffId was explicitly provided (i.e., it's null or undefined).
 			if (staffId == null) {
+				console.log("[OrderService.createOrder] no staffId provided, selecting random staff");
 				const randomStaff = await this.staffService.getRandomStaff();
 				if (randomStaff) {
 					newOrder.staffId = randomStaff.staffId;
+					console.log("[OrderService.createOrder] assigned random staffId:", newOrder.staffId);
 				}
+			} else {
+				console.log("[OrderService.createOrder] using provided staffId:", staffId);
 			}
 
+			console.log("[OrderService.createOrder] creating order with staffId:", newOrder.staffId);
 			const createdOrder = await Order.create({
 				customerId: newOrder.customerId,
 				customerName: newOrder.customerName,

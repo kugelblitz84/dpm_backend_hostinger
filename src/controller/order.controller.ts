@@ -34,6 +34,9 @@ class OrderController {
 
 	createOrder = async (req: Request, res: Response, next: NextFunction) => {
 		try {
+			// Debug: log incoming request staffId and validated payload
+			console.log("[OrderController.createOrder] incoming validated staffId:", (req as any).validatedValue?.staffId);
+			console.log("[OrderController.createOrder] validated payload:", (req as any).validatedValue);
 			if ((req as any).fileValidationError) {
 				return responseSender(
 					res,
@@ -202,6 +205,9 @@ class OrderController {
 		next: NextFunction,
 	) => {
 		try {
+			// Debug: log incoming staffId for order request
+			console.log("[OrderController.createOrderRequest] incoming validated staffId:", (req as any).validatedValue?.staffId);
+			console.log("[OrderController.createOrderRequest] validated payload:", (req as any).validatedValue);
 			if ((req as any).fileValidationError) {
 				return responseSender(
 					res,
