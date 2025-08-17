@@ -49,7 +49,7 @@ class OrderController {
 				customerPhone: (req as any).validatedValue.customerPhone,
 				// Documentation: Use staffId from the validated value if provided, otherwise default to null.
 				// This allows for explicit staff assignment or an unassigned order initially.
-				staffId: (req as any).validatedValue.staffId || null,
+				staffId: (req as any).validatedValue.staffId ?? null,
 				billingAddress: (req as any).validatedValue.billingAddress,
 				additionalNotes: (req as any).validatedValue.additionalNotes,
 				deliveryMethod: (req as any).validatedValue.deliveryMethod,
@@ -216,7 +216,7 @@ class OrderController {
 				customerPhone: (req as any).validatedValue.customerPhone,
 				// Documentation: Use staffId from the validated value if provided, otherwise default to null.
 				// This allows for explicit staff assignment or an unassigned order initially.
-				staffId: (req as any).validatedValue.staffId || null,
+				staffId: (req as any).validatedValue.staffId ?? null,
 				billingAddress: (req as any).validatedValue.billingAddress,
 				additionalNotes: (req as any).validatedValue.additionalNotes,
 				deliveryMethod: (req as any).validatedValue.deliveryMethod,
