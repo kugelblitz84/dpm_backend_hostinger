@@ -300,6 +300,7 @@ class OrderController {
 			);
 
 			if (!createdOrder) {
+				console.log("failed in create order request");
 				return responseSender(
 					res,
 					500,
