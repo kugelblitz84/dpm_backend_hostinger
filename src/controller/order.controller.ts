@@ -133,6 +133,7 @@ class OrderController {
 			);
 
 			if (!createdOrder) {
+				console.log("failed in create order");
 				return responseSender(
 					res,
 					500,
@@ -156,6 +157,7 @@ class OrderController {
 			);
 
 			if (!createdPayment) {
+				console.log("failed in create payment");
 				return responseSender(
 					res,
 					500,
@@ -170,6 +172,7 @@ class OrderController {
 				);
 
 			if (!isOrderStatusUpdated) {
+				console.log('failed in update order status');
 				return responseSender(
 					res,
 					500,
