@@ -99,20 +99,14 @@ class OrderController {
 			}
 
 			if ((req as any).validatedValue.couponId) {
-				(newOrder as any).couponId = (
-					req as any
-				).validatedValue.couponId;
+				(newOrder as any).couponId = (req as any).validatedValue.couponId;
 			}
 			if (
 				(req as any).validatedValue.courierId &&
-				(newOrder as any).validatedValue.courierAddress
+				(req as any).validatedValue.courierAddress
 			) {
-				(newOrder as any).courierId = (
-					req as any
-				).validatedValue.courierId;
-				(newOrder as any).courierAddress = (
-					req as any
-				).validatedValue.courierAddress;
+				(newOrder as any).courierId = (req as any).validatedValue.courierId;
+				(newOrder as any).courierAddress = (req as any).validatedValue.courierAddress;
 			}
 
 			const paymentStatus =
