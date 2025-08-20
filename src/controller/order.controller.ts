@@ -215,6 +215,10 @@ class OrderController {
 			console.log("[OrderController.createOrderRequest] incoming validated staffId:", (req as any).validatedValue?.staffId);
 			console.log("[OrderController.createOrderRequest] validated payload:", (req as any).validatedValue);
 			if ((req as any).fileValidationError) {
+				console.warn("[OrderController.createOrderRequest] 400 due to fileValidationError:", (req as any).fileValidationError, {
+					filesCount: Array.isArray(req.files) ? (req.files as Express.Multer.File[]).length : 0,
+					contentType: req.headers["content-type"],
+				});
 				return responseSender(
 					res,
 					400,
@@ -250,11 +254,13 @@ class OrderController {
 				(req as any).validatedValue.courierId &&
 				!(req as any).validatedValue.courierAddress
 			) {
+				console.warn("[OrderController.createOrderRequest] 400: courierId provided but courierAddress missing");
 				return responseSender(res, 400, "Courier address is required");
 			} else if (
 				!(req as any).validatedValue.courierId &&
 				(req as any).validatedValue.courierAddress
 			) {
+				console.warn("[OrderController.createOrderRequest] 400: courierAddress provided but courierId missing");
 				return responseSender(res, 400, "Courier id is required");
 			}
 

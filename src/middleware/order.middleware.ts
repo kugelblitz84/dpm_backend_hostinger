@@ -352,6 +352,23 @@ class OrderMiddleware {
 			const validationResult = orderSchema.validate(req.body);
 
 			if (validationResult.error) {
+				// Debug: surface validation error context for 400s
+				console.warn(
+					"[OrderMiddleware.validateOrderRequestCreation] 400 Validation Error",
+					{
+						message: validationResult.error.message,
+						details: (validationResult.error as any).details?.map((d: any) => d.message) || [],
+						bodyKeys: Object.keys(req.body || {}),
+					}
+				);
+				// Optional: log a compact snapshot of body (avoid huge payloads)
+				try {
+					const snapshot: any = { ...req.body } as any;
+					if (snapshot.orderItems && typeof snapshot.orderItems === "string" && (snapshot.orderItems as string).length > 200) {
+						snapshot.orderItems = (snapshot.orderItems as string).slice(0, 200) + "...";
+					}
+					console.warn("[OrderMiddleware.validateOrderRequestCreation] Body snapshot:", snapshot);
+				} catch {}
 				
 				return responseSender(res, 400, validationResult.error.message);
 			}
