@@ -337,6 +337,7 @@ class OrderMiddleware {
 				customerId: this.schema.customerId,
 				customerName: this.schema.customerName,
 				customerPhone: this.schema.customerPhone,
+				customerEmail: this.schema.customerEmail.optional(),
 				staffId: this.schema.staffId,
 				billingAddress: this.schema.billingAddress,
 				additionalNotes: this.schema.additionalNotes,
@@ -347,7 +348,7 @@ class OrderMiddleware {
 				courierAddress: this.schema.courierAddress,
 				orderItems: this.schema.orderItems,
 				// payments: this.paymentsSchema,
-			});
+			}).unknown(true); // Allow extra fields like customerEmail or future additions without 400
 
 			const validationResult = orderSchema.validate(req.body);
 

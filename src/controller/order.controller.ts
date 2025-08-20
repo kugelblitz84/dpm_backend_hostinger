@@ -271,14 +271,10 @@ class OrderController {
 			}
 			if (
 				(req as any).validatedValue.courierId &&
-				(newOrder as any).validatedValue.courierAddress
+				(req as any).validatedValue.courierAddress
 			) {
-				(newOrder as any).courierId = (
-					req as any
-				).validatedValue.courierId;
-				(newOrder as any).courierAddress = (
-					req as any
-				).validatedValue.courierAddress;
+				(newOrder as any).courierId = (req as any).validatedValue.courierId;
+				(newOrder as any).courierAddress = (req as any).validatedValue.courierAddress;
 			}
 
 			// Documentation: Fetch customer by ID if customerId is provided.
