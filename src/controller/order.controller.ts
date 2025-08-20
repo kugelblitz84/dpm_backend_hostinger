@@ -195,17 +195,18 @@ class OrderController {
 				order: createdOrder,
 			});
 		} catch (err: any) {
+			console.error('[OrderController.createOrder] ERROR:', err);
 			// cleanup process if database operation failed
 			if (req.files && Array.isArray(req.files)) {
 				req.files.forEach((file) => {
 					const filePath = path.join(file.destination, file.filename);
-
 					fs.unlink(filePath, (unlinkErr) => {
-						// File cleanup - errors are not critical
+						if (unlinkErr) {
+							console.error('[OrderController.createOrder] File cleanup error:', unlinkErr);
+						}
 					});
 				});
 			}
-
 			next(err);
 		}
 	};
@@ -339,18 +340,18 @@ class OrderController {
 				},
 			);
 		} catch (err: any) {
+			console.error('[OrderController.createOrderRequest] ERROR:', err);
 			// cleanup process if database operation failed
 			if (req.files && Array.isArray(req.files)) {
 				req.files.forEach((file) => {
 					const filePath = path.join(file.destination, file.filename);
-
 					fs.unlink(filePath, (unlinkErr) => {
 						if (unlinkErr) {
+							console.error('[OrderController.createOrderRequest] File cleanup error:', unlinkErr);
 						}
 					});
 				});
 			}
-
 			next(err);
 		}
 	};
@@ -474,6 +475,7 @@ class OrderController {
 
 			return responseSender(res, 200, "Order updated successfully.");
 		} catch (err: any) {
+			console.error('[OrderController.updateOrder] ERROR:', err);
 			next(err);
 		}
 	};
@@ -577,6 +579,7 @@ class OrderController {
 				},
 			);
 		} catch (err: any) {
+			console.error('[OrderController.createOrderPayment] ERROR:', err);
 			next(err);
 		}
 	};
@@ -682,6 +685,7 @@ class OrderController {
 				`${frontendLandingPageUrl}/success-payment?transaction=${JSON.stringify(transaction)}`,
 			);
 		} catch (err: any) {
+			console.error('[OrderController.paymentSuccess] ERROR:', err);
 			next(err);
 		}
 	};
@@ -715,6 +719,7 @@ class OrderController {
 
 			return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
 		} catch (err: any) {
+			console.error('[OrderController.paymentFail] ERROR:', err);
 			next(err);
 		}
 	};
@@ -748,6 +753,7 @@ class OrderController {
 
 			return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
 		} catch (err: any) {
+			console.error('[OrderController.paymentCancel] ERROR:', err);
 			next(err);
 		}
 	};
@@ -784,6 +790,7 @@ class OrderController {
 				orders,
 			});
 		} catch (err: any) {
+			console.error('[OrderController.getOrdersByCustomer] ERROR:', err);
 			next(err);
 		}
 	};
@@ -811,6 +818,7 @@ class OrderController {
 
 			return responseSender(res, 200, "Order deleted successfully.");
 		} catch (err: any) {
+			console.error('[OrderController.deleteOrder] ERROR:', err);
 			next(err);
 		}
 	};
@@ -962,6 +970,7 @@ class OrderController {
 				},
 			});
 		} catch (err: any) {
+			console.error('[OrderController.getAllOrders] ERROR:', err);
 			next(err);
 		}
 	};
