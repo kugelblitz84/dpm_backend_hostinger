@@ -155,45 +155,48 @@ class OrderService {
 				staffUpdateCount: 0,
 			});
 
-			if (orderItems.length > 0) {
-				orderItems.forEach(async (orderItem) => {
-					if (orderItem?.unlistedProductId) {
-						// lets first create the unlisted product
-						const unlistedProduct = await UnlistedProduct.create({
-							name: orderItem.product.name,
-							description: orderItem.product.description,
-							basePrice: orderItem.product.basePrice,
-							pricingType: orderItem.product.pricingType,
-						});
 
-						await OrderItem.create({
-							orderId: createdOrder.orderId,
-							unlistedProductId:
-								unlistedProduct.unlistedProductId,
-							quantity: orderItem.quantity,
-							size: orderItem.size,
-							widthInch: orderItem.widthInch,
-							heightInch: orderItem.heightInch,
-							price: orderItem.price,
-						});
-					} else {
-						await OrderItem.create({
-							orderId: createdOrder.orderId,
-							productId: orderItem.productId,
-							productVariantId: orderItem.productVariantId,
-							quantity: orderItem.quantity,
-							size: orderItem.size,
-							widthInch: orderItem.widthInch,
-							heightInch: orderItem.heightInch,
-							price: orderItem.price,
-						});
+			if (orderItems.length > 0) {
+				for (const orderItem of orderItems) {
+					try {
+						if (orderItem?.unlistedProductId) {
+							// lets first create the unlisted product
+							const unlistedProduct = await UnlistedProduct.create({
+								name: orderItem.product.name,
+								description: orderItem.product.description,
+								basePrice: orderItem.product.basePrice,
+								pricingType: orderItem.product.pricingType,
+							});
+							await OrderItem.create({
+								orderId: createdOrder.orderId,
+								unlistedProductId: unlistedProduct.unlistedProductId,
+								quantity: orderItem.quantity,
+								size: orderItem.size,
+								widthInch: orderItem.widthInch,
+								heightInch: orderItem.heightInch,
+								price: orderItem.price,
+							});
+						} else {
+							await OrderItem.create({
+								orderId: createdOrder.orderId,
+								productId: orderItem.productId,
+								productVariantId: orderItem.productVariantId,
+								quantity: orderItem.quantity,
+								size: orderItem.size,
+								widthInch: orderItem.widthInch,
+								heightInch: orderItem.heightInch,
+								price: orderItem.price,
+							});
+						}
+					} catch (itemErr) {
+						console.error("Error creating order item:", itemErr);
 					}
-				});
+				}
 			}
 
 			return (await this.getOrderById(createdOrder.orderId)) || null;
 		} catch (err: any) {
-			
+			console.error("OrderService.createOrder error:", err);
 			throw err;
 		}
 	};
