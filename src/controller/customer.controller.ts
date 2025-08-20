@@ -97,14 +97,33 @@ class CustomerController {
 					{
 						customer: authTokenPayload,
 						authToken,
+						emailDelivery: "sent",
 					},
 				);
 			} catch (err: any) {
-				
-				// clean up the database
-				await this.customerService.deleteCustomer(customer.email);
-
-				next(err);
+				// Do NOT fail registration if email sending fails. Log and return success with guidance.
+				const verificationUrl = urlJoin(
+					serverBaseUrl,
+					serverUrlPrefix,
+					`/customer/verify?email=${customer.email}&token=${customer.verificationToken}`,
+				);
+				console.error("[CustomerController.registerCustomer] Email send failed; continuing registration", {
+					name: err?.name,
+					code: err?.code,
+					message: err?.message,
+				});
+				io.emit("register-customer", { customer: authTokenPayload });
+				return responseSender(
+					res,
+					201,
+					"Customer registered successfully. We could not send the verification email right now.",
+					{
+						customer: authTokenPayload,
+						authToken,
+						emailDelivery: "failed",
+						verificationUrl, // Expose for immediate manual verification
+					},
+				);
 			}
 		} catch (err: any) {
 			

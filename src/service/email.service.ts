@@ -15,17 +15,25 @@ class EmailService {
 		variables: Record<string, any>,
 	) => {
 		// Debug: log mail transport config (sanitized)
+		const portNum = Number(mailServerPort);
+		const secure = portNum === 465; // SSL on 465, STARTTLS on 587
 		console.log("[EmailService.sendEmail] Preparing transporter", {
 			host: mailServerHost,
-			port: mailServerPort,
-			secure: true,
+			port: portNum,
+			secure,
 			user: mailServerUser ? "<set>" : "<missing>",
 		});
 
+		if (!mailServerHost || !portNum || !mailServerUser || !mailServerPassword) {
+			const msg = "Email credentials missing (host/port/user/password).";
+			console.error("[EmailService.sendEmail] ERROR", { message: msg });
+			throw new Error(msg);
+		}
+
 		const transporter = nodemailer.createTransport({
 			host: mailServerHost,
-			port: mailServerPort,
-			secure: true,
+			port: portNum,
+			secure,
 			auth: {
 				user: mailServerUser,
 				pass: mailServerPassword,
