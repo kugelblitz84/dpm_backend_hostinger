@@ -55,8 +55,13 @@ class AuthMiddleware {
 	) => {
 		return async (req: Request, res: Response, next: NextFunction) => {
 			try {
+				// Debug: Incoming auth request metadata
+				const _path = (req as any).originalUrl || req.url;
+				const _method = req.method;
+				console.log("[Auth] START authenticate", { path: _path, method: _method, allowedRoles: roles });
 				const authHeader = req.headers["authorization"];
 				if (!authHeader) {
+						console.warn("[Auth] Missing Authorization header", { path: _path, method: _method });
 					return responseSender(
 						res,
 						401,
@@ -65,6 +70,7 @@ class AuthMiddleware {
 				}
 				const authToken = authHeader.split(" ")[1];
 				if (!authToken) {
+						console.warn("[Auth] Malformed Authorization header", { header: authHeader });
 					return responseSender(
 						res,
 						401,
@@ -74,14 +80,21 @@ class AuthMiddleware {
 				try {
 					const decodedToken = verifyToken(authToken);
 					if (!decodedToken) {
+							console.warn("[Auth] Token verification failed", { path: _path, method: _method });
 						return responseSender(
 							res,
 							401,
 							"Invalid authorization token.",
 						);
 					}
+					console.log("[Auth] Decoded token", {
+						email: (decodedToken as any)?.email,
+						role: (decodedToken as any)?.role,
+						tokenVersion: (decodedToken as any)?.tokenVersion,
+					});
 					let user;
 					for (let role of roles) {
+						console.log("[Auth] Checking role", role);
 						if (role === "customer") {
 							user =
 								await this.customerService.getCustomerByEmail(
@@ -92,6 +105,7 @@ class AuthMiddleware {
 									decodedToken.tokenVersion !==
 									user.tokenVersion
 								) {
+										console.warn("[Auth] Token version mismatch (customer)", { expected: user.tokenVersion, received: (decodedToken as any)?.tokenVersion });
 									return responseSender(
 										res,
 										401,
@@ -103,6 +117,7 @@ class AuthMiddleware {
 									...decodedToken,
 									role: "customer",
 								};
+									console.log("[Auth] Authenticated as customer", { email: user.email });
 								break;
 							}
 						} else if (role === "admin") {
@@ -114,6 +129,7 @@ class AuthMiddleware {
 									decodedToken.tokenVersion !==
 									user.tokenVersion
 								) {
+										console.warn("[Auth] Token version mismatch (admin)", { expected: user.tokenVersion, received: (decodedToken as any)?.tokenVersion });
 									return responseSender(
 										res,
 										401,
@@ -125,6 +141,7 @@ class AuthMiddleware {
 									...decodedToken,
 									role: "admin",
 								};
+									console.log("[Auth] Authenticated as admin", { email: user.email });
 								break;
 							}
 						} else if (role === "agent" || role === "designer") {
@@ -138,6 +155,7 @@ class AuthMiddleware {
 									decodedToken.tokenVersion !==
 									user.tokenVersion
 								) {
+										console.warn("[Auth] Token version mismatch (staff)", { expected: user.tokenVersion, received: (decodedToken as any)?.tokenVersion });
 									return responseSender(
 										res,
 										401,
@@ -151,11 +169,14 @@ class AuthMiddleware {
 									staffId: user.staffId,
 								};
 
+									console.log("[Auth] Authenticated as staff", { email: user.email, staffRole: user.role, staffId: user.staffId });
+
 								break;
 							}
 						}
 					}
 					if (!user) {
+						console.warn("[Auth] User not found for allowed roles", { email: (decodedToken as any)?.email, allowedRoles: roles });
 						return responseSender(
 							res,
 							401,
@@ -165,15 +186,18 @@ class AuthMiddleware {
 					next();
 				} catch (err: any) {
 					if (err instanceof jwt.JsonWebTokenError) {
+						console.error("[Auth] JWT error", { name: err.name, message: err.message, path: _path, method: _method });
 						return responseSender(
 							res,
 							401,
 							err.message || "Invalid authorization token.",
 						);
 					}
+					console.error("[Auth] Unexpected error in authenticate", { path: _path, method: _method, err });
 					next(err);
 				}
 			} catch (err: any) {
+				console.error("[Auth] Fatal error in authenticate middleware", err);
 				next(err);
 			}
 		};
