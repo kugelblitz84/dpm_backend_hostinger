@@ -45,26 +45,35 @@ class OrderController {
 				);
 			}
 
+			// Accept orderItems as array (not string) for JSON requests, and parse if string (multipart)
+			let orderItems = (req as any).validatedValue.orderItems;
+			if (typeof orderItems === "string") {
+				try {
+					orderItems = JSON.parse(orderItems);
+				} catch (e) {
+					return responseSender(res, 400, "Invalid orderItems format");
+				}
+			}
+			// Accept deliveryDate as ISO string or null
+			let deliveryDate = (req as any).validatedValue.deliveryDate;
+			if (typeof deliveryDate === "string" && deliveryDate !== "null") {
+				deliveryDate = new Date(deliveryDate);
+			} else if (deliveryDate === "null" || deliveryDate === null) {
+				deliveryDate = null;
+			}
 			const newOrder = {
-				// customerId: (req as any).validatedValue.customerId,
 				customerName: (req as any).validatedValue.customerName,
 				customerEmail: (req as any).validatedValue.customerEmail,
 				customerPhone: (req as any).validatedValue.customerPhone,
-				// Documentation: Use staffId from the validated value if provided, otherwise default to null.
-				// This allows for explicit staff assignment or an unassigned order initially.
 				staffId: (req as any).validatedValue.staffId ?? null,
 				billingAddress: (req as any).validatedValue.billingAddress,
 				additionalNotes: (req as any).validatedValue.additionalNotes,
 				deliveryMethod: (req as any).validatedValue.deliveryMethod,
-				deliveryDate:
-					(req as any).validatedValue.deliveryDate !== "null"
-						? (req as any).validatedValue.deliveryDate
-						: null,
+				deliveryDate,
 				paymentMethod: (req as any).validatedValue.paymentMethod,
 				amount: (req as any).validatedValue.amount,
 				orderTotal: (req as any).validatedValue.orderTotal,
-				orderItems: (req as any).validatedValue.orderItems,
-				// payments: (req as any).validatedValue.payments,
+				orderItems,
 			};
 
 			// Documentation: Override staffId with authenticated staff only when the request
@@ -114,7 +123,6 @@ class OrderController {
 						: "partial";
 
 			const createdOrder = await this.orderService.createOrder(
-				// newOrder.customerId,
 				newOrder.customerName,
 				newOrder.customerEmail,
 				newOrder.customerPhone,
@@ -129,7 +137,7 @@ class OrderController {
 				(newOrder as any)?.courierId || null,
 				(newOrder as any)?.courierAddress || null,
 				newOrder.orderTotal,
-				JSON.parse(newOrder.orderItems),
+				newOrder.orderItems,
 			);
 
 			if (!createdOrder) {
