@@ -72,7 +72,7 @@ orderRouter.post(
 	"/create-request",
 	strictLimiter,
 	// Documentation: Allow 'designer' role to create order requests, in addition to 'admin' and 'agent'.
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "customer"]),
 	orderImageUploader.uploader("order-images").array("designFiles", 5),
 	orderImageUploader.compressImages,
 	orderMiddleware.validateOrderRequestCreation,
