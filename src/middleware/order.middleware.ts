@@ -314,14 +314,7 @@ class OrderMiddleware {
 			const validationResult = orderSchema.validate(req.body);
 
 			if (validationResult.error) {
-				// Debug: Log validation error for create-order-request
-				console.warn("[OrderMiddleware.validateOrderRequestCreation] 400 Validation Error", {
-					message: validationResult.error.message,
-					details: validationResult.error.details,
-					path: (req as any).originalUrl || req.url,
-					method: req.method,
-					bodyKeys: Object.keys(req.body || {}),
-				});
+				
 				return responseSender(res, 400, validationResult.error.message);
 			}
 
