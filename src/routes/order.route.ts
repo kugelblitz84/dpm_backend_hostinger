@@ -91,7 +91,7 @@ orderRouter.put(
 orderRouter.post(
 	"/add-payment",
 	strictLimiter,
-	// Documentation: Restrict adding payments to 'admin' and 'agent' roles. 'designer' role is excluded.
+	// Documentation: Allow 'designer' role to add payments, in addition to 'admin' and 'agent'.
 	(req: Request, _res: Response, next) => {
 		console.log("[Route:/order/add-payment] Incoming", {
 			method: req.method,
@@ -102,7 +102,7 @@ orderRouter.post(
 		});
 		next();
 	},
-	authMiddleware.authenticate(["admin", "agent"]),
+	authMiddleware.authenticate(["admin", "agent", "designer"]),
 	orderMiddleware.validateOrderPaymentCreation,
 	orderController.createOrderPayment,
 );
