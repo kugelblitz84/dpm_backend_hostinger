@@ -20,6 +20,15 @@ const errorController = (
 				return responseSender(res, 400, err.message);
 		}
 	}
+	try {
+		const req: any = (res as any).req;
+		console.error("[GlobalErrorHandler] 500", {
+			path: req?.path,
+			method: req?.method,
+			message: err?.message,
+			stack: err?.stack,
+		});
+	} catch {}
 	responseSender(res, 500, "Internal server error occured.");
 };
 

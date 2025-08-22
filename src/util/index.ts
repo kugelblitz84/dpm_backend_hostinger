@@ -20,6 +20,29 @@ export const responseSender = (
 		data,
 	};
 
+	// Centralized debug logging for error responses
+	if (status >= 400) {
+		try {
+			const req: any = (res as any).req; // Express exposes the request on response
+			const path = req?.path;
+			const method = req?.method;
+			const user = {
+				admin: Boolean(req?.admin),
+				staffRole: req?.staff?.role,
+				staffId: req?.staff?.staffId,
+				customer: Boolean(req?.customer),
+			};
+			const context = { path, method, status, message, user };
+			if (status === 401) {
+				console.warn("[responseSender] 401 Unauthorized", context);
+			} else if (status >= 500) {
+				console.error("[responseSender] 5xx Error", context);
+			} else {
+				console.warn("[responseSender] 4xx Client Error", context);
+			}
+		} catch {}
+	}
+
 	res.header("Content-Type", "application/json");
 	res.status(status).json(responseData);
 };

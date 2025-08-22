@@ -686,6 +686,19 @@ class OrderController {
 				);
 			}
 
+			if (!transaction) {
+				return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
+			}
+
+			return res.redirect(
+				`${frontendLandingPageUrl}/success-payment?transaction=${JSON.stringify(transaction)}`,
+			);
+		} catch (err: any) {
+			console.error('[OrderController.paymentSuccess] ERROR:', err);
+			next(err);
+		}
+	};
+
 	paymentFail = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const transactionId = req.body.tran_id;
