@@ -57,46 +57,64 @@ class AuthMiddleware {
 			try {
 				const authHeader = req.headers["authorization"];
 				if (!authHeader) {
-					return responseSender(
-						res,
-						401,
-						"Authorization token is missing.",
+					console.warn(
+						"[AuthMiddleware.authenticate] 401 - Missing Authorization header",
+						{
+							path: req.path,
+							method: req.method,
+							expectedRoles: roles,
+							hasAuthHeader: Boolean(authHeader),
+						},
 					);
+					return responseSender(res, 401, "Authorization token is missing.");
 				}
 				const authToken = authHeader.split(" ")[1];
 				if (!authToken) {
-					return responseSender(
-						res,
-						401,
-						"Authorization token is missing.",
+					console.warn(
+						"[AuthMiddleware.authenticate] 401 - Token missing after 'Bearer'",
+						{
+							path: req.path,
+							method: req.method,
+							expectedRoles: roles,
+							providedAuthHeader: (authHeader as string).slice(0, 10) + "***",
+						},
 					);
+					return responseSender(res, 401, "Authorization token is missing.");
 				}
 				try {
 					const decodedToken = verifyToken(authToken);
 					if (!decodedToken) {
-						return responseSender(
-							res,
-							401,
-							"Invalid authorization token.",
+						console.warn(
+							"[AuthMiddleware.authenticate] 401 - Token verification returned falsy decoded payload",
+							{
+								path: req.path,
+								method: req.method,
+								expectedRoles: roles,
+								tokenPreview: (authToken as string).slice(0, 8) + "***",
+							},
 						);
+						return responseSender(res, 401, "Invalid authorization token.");
 					}
 					let user;
 					for (let role of roles) {
 						if (role === "customer") {
-							user =
-								await this.customerService.getCustomerByEmail(
-									decodedToken.email,
-								);
+							user = await this.customerService.getCustomerByEmail(
+								decodedToken.email,
+							);
 							if (user) {
-								if (
-									decodedToken.tokenVersion !==
-									user.tokenVersion
-								) {
-									return responseSender(
-										res,
-										401,
-										"Invalid authorization token.",
+								if (decodedToken.tokenVersion !== user.tokenVersion) {
+									console.warn(
+										"[AuthMiddleware.authenticate] 401 - Customer tokenVersion mismatch",
+										{
+											path: req.path,
+											method: req.method,
+											expectedRoles: roles,
+											email: decodedToken.email,
+											tokenVersionFromToken: decodedToken.tokenVersion,
+											tokenVersionInDB: user.tokenVersion,
+										},
 									);
+									return responseSender(res, 401, "Invalid authorization token.");
 								}
 								// Documentation: Assign the decoded token, ensuring it includes the role.
 								(req as any).customer = {
@@ -110,15 +128,19 @@ class AuthMiddleware {
 								decodedToken.email,
 							);
 							if (user) {
-								if (
-									decodedToken.tokenVersion !==
-									user.tokenVersion
-								) {
-									return responseSender(
-										res,
-										401,
-										"Invalid authorization token.",
+								if (decodedToken.tokenVersion !== user.tokenVersion) {
+									console.warn(
+										"[AuthMiddleware.authenticate] 401 - Admin tokenVersion mismatch",
+										{
+											path: req.path,
+											method: req.method,
+											expectedRoles: roles,
+											email: decodedToken.email,
+											tokenVersionFromToken: decodedToken.tokenVersion,
+											tokenVersionInDB: user.tokenVersion,
+										},
 									);
+									return responseSender(res, 401, "Invalid authorization token.");
 								}
 								// Documentation: Assign the decoded token, ensuring it includes the role.
 								(req as any).admin = {
@@ -128,21 +150,25 @@ class AuthMiddleware {
 								break;
 							}
 						} else if (role === "agent" || role === "designer") {
-							user =
-								await this.staffService.getStaffByEmailAndRole(
-									decodedToken.email,
-									role,
-								);
+							user = await this.staffService.getStaffByEmailAndRole(
+								decodedToken.email,
+								role,
+							);
 							if (user) {
-								if (
-									decodedToken.tokenVersion !==
-									user.tokenVersion
-								) {
-									return responseSender(
-										res,
-										401,
-										"Invalid authorization token.",
+								if (decodedToken.tokenVersion !== user.tokenVersion) {
+									console.warn(
+										"[AuthMiddleware.authenticate] 401 - Staff tokenVersion mismatch",
+										{
+											path: req.path,
+											method: req.method,
+											expectedRoles: roles,
+											email: decodedToken.email,
+											roleRequested: role,
+											tokenVersionFromToken: decodedToken.tokenVersion,
+											tokenVersionInDB: user.tokenVersion,
+										},
 									);
+									return responseSender(res, 401, "Invalid authorization token.");
 								}
 
 								(req as any).staff = {
@@ -156,24 +182,49 @@ class AuthMiddleware {
 						}
 					}
 					if (!user) {
-						return responseSender(
-							res,
-							401,
-							"Invalid authorization token.",
+						console.warn(
+							"[AuthMiddleware.authenticate] 401 - No matching user for allowed roles",
+							{
+								path: req.path,
+								method: req.method,
+								expectedRoles: roles,
+								emailFromToken: (decodedToken as any)?.email,
+							},
 						);
+						return responseSender(res, 401, "Invalid authorization token.");
 					}
 					next();
 				} catch (err: any) {
 					if (err instanceof jwt.JsonWebTokenError) {
+						console.warn("[AuthMiddleware.authenticate] 401 - JsonWebTokenError", {
+							path: req.path,
+							method: req.method,
+							expectedRoles: roles,
+							error: err.message,
+						});
 						return responseSender(
 							res,
 							401,
 							err.message || "Invalid authorization token.",
 						);
 					}
+					console.error("[AuthMiddleware.authenticate] ERROR", {
+						path: req.path,
+						method: req.method,
+						expectedRoles: roles,
+						error: err?.message,
+						stack: err?.stack,
+					});
 					next(err);
 				}
 			} catch (err: any) {
+				console.error("[AuthMiddleware.authenticate] FATAL ERROR", {
+					path: req.path,
+					method: req.method,
+					expectedRoles: roles,
+					error: err?.message,
+					stack: err?.stack,
+				});
 				next(err);
 			}
 		};

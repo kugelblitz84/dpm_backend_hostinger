@@ -482,6 +482,17 @@ class OrderController {
 		next: NextFunction,
 	) => {
 		try {
+			console.log("[OrderController.createOrderPayment] ENTER", {
+				path: req.path,
+				method: req.method,
+				user: {
+					admin: Boolean((req as any).admin),
+					staffRole: (req as any).staff?.role,
+					staffId: (req as any).staff?.staffId,
+				},
+				bodyKeys: Object.keys(req.body || {}),
+			});
+
 			const newPayment = {
 				orderId: (req as any).validatedValue.orderId,
 				amount: (req as any).validatedValue.amount,
@@ -491,14 +502,16 @@ class OrderController {
 				customerPhone: (req as any).validatedValue.customerPhone,
 			};
 
+			console.log("[OrderController.createOrderPayment] Payload", newPayment);
+
 			if (newPayment.paymentMethod === "cod-payment") {
-				const createdPayment =
-					await this.paymentService.createCashPayment(
-						newPayment.orderId,
-						newPayment.amount,
-					);
+				const createdPayment = await this.paymentService.createCashPayment(
+					newPayment.orderId,
+					newPayment.amount,
+				);
 
 				if (!createdPayment) {
+					console.warn("[OrderController.createOrderPayment] 500 - Failed to create COD payment", newPayment);
 					return responseSender(
 						res,
 						500,
@@ -507,15 +520,12 @@ class OrderController {
 				}
 
 				// update the order status
-				const order = await this.orderService.getOrderById(
-					newPayment.orderId,
-				);
+				const order = await this.orderService.getOrderById(newPayment.orderId);
 				if (!order) {
-					return responseSender(
-						res,
-						500,
-						"Order not found. Please try again.",
-					);
+					console.warn("[OrderController.createOrderPayment] 500 - Order not found for status update", {
+						orderId: newPayment.orderId,
+					});
+					return responseSender(res, 500, "Order not found. Please try again.");
 				}
 
 				const totalPaidAmount = order.payments.reduce((acc, curr) => {
@@ -526,12 +536,15 @@ class OrderController {
 				const isOrderStatusUpdated =
 					await this.orderService.updateOrderPaymentStatus(
 						newPayment.orderId,
-						totalPaidAmount === order.orderTotalPrice
-							? "paid"
-							: "partial",
+						totalPaidAmount === order.orderTotalPrice ? "paid" : "partial",
 					);
 
 				if (!isOrderStatusUpdated) {
+					console.warn("[OrderController.createOrderPayment] 500 - Failed to update order status", {
+						orderId: newPayment.orderId,
+						totalPaidAmount,
+						orderTotal: order.orderTotalPrice,
+					});
 					return responseSender(
 						res,
 						500,
@@ -549,16 +562,16 @@ class OrderController {
 				);
 			}
 
-			const createdPayment =
-				await this.paymentService.createOnlinePayment(
-					newPayment.orderId,
-					newPayment.amount,
-					newPayment.customerName,
-					newPayment.customerEmail,
-					newPayment.customerPhone,
-				);
+			const createdPayment = await this.paymentService.createOnlinePayment(
+				newPayment.orderId,
+				newPayment.amount,
+				newPayment.customerName,
+				newPayment.customerEmail,
+				newPayment.customerPhone,
+			);
 
 			if (!createdPayment) {
+				console.warn("[OrderController.createOrderPayment] 500 - Failed to create Online payment", newPayment);
 				return responseSender(
 					res,
 					500,
@@ -672,19 +685,6 @@ class OrderController {
 					"Order status update failed. Please try again.",
 				);
 			}
-
-			if (!transaction) {
-				return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
-			}
-
-			return res.redirect(
-				`${frontendLandingPageUrl}/success-payment?transaction=${JSON.stringify(transaction)}`,
-			);
-		} catch (err: any) {
-			console.error('[OrderController.paymentSuccess] ERROR:', err);
-			next(err);
-		}
-	};
 
 	paymentFail = async (req: Request, res: Response, next: NextFunction) => {
 		try {

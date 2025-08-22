@@ -438,14 +438,29 @@ class OrderMiddleware {
 					.messages({
 						"string.pattern.base":
 							"Customer phone number must be a valid Bangladeshi number starting with 01 and 11 digits long.",
-						"string.empty":
-							"Customer phone number cannot be empty.",
+						"string.empty": "Customer phone number cannot be empty.",
 					}),
 			});
 
 			const validationResult = orderSchema.validate(req.body);
 
 			if (validationResult.error) {
+				console.warn(
+					"[OrderMiddleware.validateOrderPaymentCreation] 400 Validation Error",
+					{
+						message: validationResult.error.message,
+						details: (validationResult.error as any).details?.map((d: any) => d.message) || [],
+						bodyKeys: Object.keys(req.body || {}),
+					}
+				);
+				try {
+					const snapshot: any = { ...req.body } as any;
+					Object.keys(snapshot || {}).forEach((k) => {
+						const v = snapshot[k];
+						if (typeof v === "string" && v.length > 200) snapshot[k] = v.slice(0, 200) + "...";
+					});
+					console.warn("[OrderMiddleware.validateOrderPaymentCreation] Body snapshot:", snapshot);
+				} catch {}
 				
 				return responseSender(res, 400, validationResult.error.message);
 			}
