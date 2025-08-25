@@ -12,7 +12,6 @@ import {
 } from "./config/dotenv.config";
 import { initializeDatabase } from "./config/database.config";
 import SocketService from "./service/socket.service";
-import { createSshTunnel } from "./config/ssh-tunnel"; // new SSH tunnel module
 
 const server = http.createServer(app);
 
@@ -27,10 +26,7 @@ export const io = new Server(server, {
 
 const initializeServer = async (): Promise<void> => {
   try {
-    // 1️⃣ Start SSH tunnel first (for MySQL)
-    await createSshTunnel();
-
-    // 2️⃣ Initialize database connection (now tunnel is active)
+  // Initialize database connection (direct to Hostinger MySQL)
     await initializeDatabase();
 
     // 3️⃣ Socket.io connections
@@ -47,7 +43,7 @@ const initializeServer = async (): Promise<void> => {
       });
     });
 
-    // 4️⃣ Start HTTP server
+  // Start HTTP server
     server.listen(port, () => {
       console.log(`Server is running on port ${port}`.blue);
     });
