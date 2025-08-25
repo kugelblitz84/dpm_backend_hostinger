@@ -1,9 +1,13 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import urlJoin from "url-join";
 import path from "path";
 import os from "os";
 
 let resolvedStaticDir: string;
+
+// Explicitly load .env from project root (dist/config -> back two levels)
+const envPath = process.env.ENV_PATH || path.resolve(__dirname, "../../.env");
+dotenv.config({ path: envPath });
 
 export const nodeEnv: string = process.env.NODE_ENV || "development";
 
@@ -35,6 +39,11 @@ export const dbHost: string =
 	nodeEnv === "production"
 		? process.env.PRODUCTION_DB_HOST || ""
 		: process.env.DEVELOPMENT_DB_HOST || "";
+
+export const dbPort: number =
+	nodeEnv === "production"
+		? parseInt(process.env.PRODUCTION_DB_PORT || "3306", 10)
+		: parseInt(process.env.DEVELOPMENT_DB_PORT || "3306", 10);
 
 // Debug log database configuration selection
 
