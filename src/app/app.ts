@@ -6,12 +6,7 @@ import compression from "compression";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpecs from "../config/swagger.config";
 
-import {
-	serverUrlPrefix,
-	apiDocsUrl,
-	apiWhitelistedDomains,
-	staticDir,
-} from "../config/dotenv.config";
+import { serverUrlPrefix, apiDocsUrl, staticDir } from "../config/dotenv.config";
 import { responseSender } from "../util";
 
 import adminRouter from "../routes/admin.route";
@@ -40,23 +35,18 @@ import dashboardRouter from "../routes/dashboard.route";
 
 const app = express();
 
-export const allowedOrigins = apiWhitelistedDomains;
 export const corsOptions: CorsOptions = {
-	origin: (origin, callback) => {
-		if (!origin || allowedOrigins?.includes(origin)) {
-			callback(null, true); // Allow the origin
-		} else {
-			callback(new Error("Not allowed by CORS")); // Reject the origin
-		}
-	},
-	methods: ["GET", "POST", "PUT", "DELETE"],
+	// Allow all origins; when credentials=true, cors will echo back the request origin
+	origin: true,
+	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	credentials: true,
 };
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(cors(corsOptions));
-app.use(cors());
+app.use(cors(corsOptions));
+// Handle preflight for all routes
+app.options("*", cors(corsOptions));
 app.use(compression());
 app.use(helmet());
 
