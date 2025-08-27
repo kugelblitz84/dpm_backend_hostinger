@@ -1,7 +1,8 @@
 import "colors";
 import "./util/cron-job";
-import https from "https";
-import fs from "fs";
+import http from "http";
+// import https from "https";
+// import fs from "fs";
 import { Server } from "socket.io";
 import app, { corsOptions } from "./app/app";
 import urlJoin from "url-join";
@@ -14,11 +15,13 @@ import {
 import { initializeDatabase } from "./config/database.config";
 import SocketService from "./service/socket.service";
 
-const httpsOptions = {
-  key: fs.readFileSync("/etc/ssl/private/backend.key"),
-  cert: fs.readFileSync("/etc/ssl/private/backend.crt"),
-};
-const server = https.createServer(httpsOptions, app);
+// const httpsOptions = {
+//   key: fs.readFileSync("/etc/ssl/private/backend.key"),
+//   cert: fs.readFileSync("/etc/ssl/private/backend.crt"),
+// };
+
+const server = http.createServer(app);
+
 
 export const io = new Server(server, {
 	cors: {
