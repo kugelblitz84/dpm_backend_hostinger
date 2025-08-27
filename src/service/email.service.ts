@@ -73,6 +73,19 @@ class EmailService {
 				command: err?.command,
 				response: err?.response,
 			});
+
+			// Provide a clearer hint for common network errors so PM2 logs are actionable
+			if (err?.code === "ECONNREFUSED") {
+				console.error(
+					"[EmailService.sendEmail] ECONNREFUSED: Connection refused when connecting to SMTP host.\n" +
+					`Host: ${mailServerHost}, Port: ${portNum}.\n` +
+					"Possible causes: firewall blocking the port, no SMTP server listening at that host/port, or incorrect host/port credentials.\n" +
+					"Suggested actions: (1) open the SMTP port on the server firewall (e.g. ufw/iptables), (2) verify the mail server is running and accepting connections, or (3) switch to a third-party SMTP provider and update MAIL_SERVER_* env vars."
+				);
+				// augment error message for upstream visibility
+				err.message = `${err.message} — Connection refused to ${mailServerHost}:${portNum}. Check firewall/SMTP server or use a different SMTP provider.`;
+			}
+
 			throw err;
 		}
 	};
