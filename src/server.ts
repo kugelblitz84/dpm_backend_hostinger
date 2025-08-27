@@ -14,8 +14,8 @@ import {
 import { initializeDatabase } from "./config/database.config";
 import SocketService from "./service/socket.service";
 
-const privateKey = fs.readFileSync("./certs/server.key", "utf8");
-const certificate = fs.readFileSync("./certs/server.cert", "utf8");
+const privateKey = fs.readFileSync("/etc/ssl/private/backend.key");
+const certificate = fs.readFileSync("/etc/ssl/private/backend.crt");
 const credentials = { key: privateKey, cert: certificate };
 const server = https.createServer(credentials, app);
 
