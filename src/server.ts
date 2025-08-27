@@ -1,6 +1,7 @@
 import "colors";
 import "./util/cron-job";
-import http from "http";
+import https from "https";
+import fs from "fs";
 import { Server } from "socket.io";
 import app, { corsOptions } from "./app/app";
 import urlJoin from "url-join";
@@ -13,7 +14,10 @@ import {
 import { initializeDatabase } from "./config/database.config";
 import SocketService from "./service/socket.service";
 
-const server = http.createServer(app);
+const privateKey = fs.readFileSync("./certs/server.key", "utf8");
+const certificate = fs.readFileSync("./certs/server.cert", "utf8");
+const credentials = { key: privateKey, cert: certificate };
+const server = https.createServer(credentials, app);
 
 export const io = new Server(server, {
 	cors: {
