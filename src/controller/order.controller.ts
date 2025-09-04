@@ -562,6 +562,9 @@ class OrderController {
 				);
 			}
 
+			// COMMENTED OUT: Online payment functionality temporarily disabled
+			// TODO: Re-enable after fixing online payment issues
+			/*
 			const createdPayment = await this.paymentService.createOnlinePayment(
 				newPayment.orderId,
 				newPayment.amount,
@@ -587,12 +590,24 @@ class OrderController {
 					...createdPayment,
 				},
 			);
+			*/
+
+			// TEMPORARY: Reject online payment attempts until re-enabled
+			console.warn("[OrderController.createOrderPayment] Online payments temporarily disabled", newPayment);
+			return responseSender(
+				res,
+				400,
+				"Online payments are temporarily unavailable. Please use cash payment (COD) instead.",
+			);
 		} catch (err: any) {
 			console.error('[OrderController.createOrderPayment] ERROR:', err);
 			next(err);
 		}
 	};
 
+	// COMMENTED OUT: Online payment webhook handlers temporarily disabled
+	// TODO: Re-enable after fixing online payment issues
+	/*
 	paymentSuccess = async (
 		req: Request,
 		res: Response,
@@ -765,6 +780,23 @@ class OrderController {
 			console.error('[OrderController.paymentCancel] ERROR:', err);
 			next(err);
 		}
+	};
+	*/
+
+	// TEMPORARY: Disabled online payment webhook handlers
+	paymentSuccess = async (req: Request, res: Response, next: NextFunction) => {
+		console.warn("[OrderController.paymentSuccess] Online payment webhooks temporarily disabled");
+		return res.status(503).send("Online payment processing temporarily unavailable");
+	};
+
+	paymentFail = async (req: Request, res: Response, next: NextFunction) => {
+		console.warn("[OrderController.paymentFail] Online payment webhooks temporarily disabled");
+		return res.status(503).send("Online payment processing temporarily unavailable");
+	};
+
+	paymentCancel = async (req: Request, res: Response, next: NextFunction) => {
+		console.warn("[OrderController.paymentCancel] Online payment webhooks temporarily disabled");
+		return res.status(503).send("Online payment processing temporarily unavailable");
 	};
 
 	getOrdersByCustomer = async (

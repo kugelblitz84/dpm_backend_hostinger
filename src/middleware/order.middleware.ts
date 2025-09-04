@@ -81,6 +81,9 @@ class OrderMiddleware {
 				"any.required": "amount is required.",
 			}),
 
+			// COMMENTED OUT: Online payment validation temporarily disabled
+			// TODO: Re-enable after fixing online payment issues
+			/*
 			paymentMethod: Joi.string()
 				.valid("cod-payment", "online-payment")
 				.required()
@@ -89,6 +92,18 @@ class OrderMiddleware {
 					"string.empty": "paymentMethod cannot be empty.",
 					"any.required":
 						"paymentMethod is required. It should be either cod-payment or online-payment.",
+				}),
+			*/
+
+			// TEMPORARY: Only allow COD payments until online payments are re-enabled
+			paymentMethod: Joi.string()
+				.valid("cod-payment")
+				.required()
+				.messages({
+					"string.base": "paymentMethod must be a string.",
+					"string.empty": "paymentMethod cannot be empty.",
+					"any.required": "paymentMethod is required.",
+					"any.only": "Only COD (cash on delivery) payments are currently available. Online payments are temporarily disabled.",
 				}),
 
 			customerName: Joi.string().trim().min(2).required().messages({
@@ -230,6 +245,9 @@ class OrderMiddleware {
 					"any.required": "deliveryMethod is required.",
 				}),
 
+			// COMMENTED OUT: Online payment validation temporarily disabled
+			// TODO: Re-enable after fixing online payment issues
+			/*
 			paymentMethod: Joi.string()
 				.valid("cod-payment", "online-payment")
 				.required()
@@ -238,6 +256,18 @@ class OrderMiddleware {
 					"string.empty": "paymentMethod cannot be empty.",
 					"any.required":
 						"paymentMethod is required. It should be either cod-payment or online-payment.",
+				}),
+			*/
+
+			// TEMPORARY: Only allow COD payments until online payments are re-enabled
+			paymentMethod: Joi.string()
+				.valid("cod-payment")
+				.required()
+				.messages({
+					"string.base": "paymentMethod must be a string.",
+					"string.empty": "paymentMethod cannot be empty.",
+					"any.required": "paymentMethod is required.",
+					"any.only": "Only COD (cash on delivery) payments are currently available. Online payments are temporarily disabled.",
 				}),
 
 			paymentStatus: Joi.string()
@@ -402,6 +432,9 @@ class OrderMiddleware {
 					"any.required": "amount is required.",
 				}),
 
+				// COMMENTED OUT: Online payment validation temporarily disabled
+				// TODO: Re-enable after fixing online payment issues
+				/*
 				paymentMethod: Joi.string()
 					.valid("cod-payment", "online-payment")
 					.required()
@@ -410,6 +443,18 @@ class OrderMiddleware {
 						"string.empty": "paymentMethod cannot be empty.",
 						"any.required":
 							"paymentMethod is required. It should be either cod-payment or online-payment.",
+					}),
+				*/
+
+				// TEMPORARY: Only allow COD payments until online payments are re-enabled
+				paymentMethod: Joi.string()
+					.valid("cod-payment")
+					.required()
+					.messages({
+						"string.base": "paymentMethod must be a string.",
+						"string.empty": "paymentMethod cannot be empty.",
+						"any.required": "paymentMethod is required.",
+						"any.only": "Only COD (cash on delivery) payments are currently available. Online payments are temporarily disabled.",
 					}),
 
 				customerName: Joi.string().trim().min(2).required().messages({

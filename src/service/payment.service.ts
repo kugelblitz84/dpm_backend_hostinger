@@ -1,14 +1,20 @@
+// COMMENTED OUT: Online payment dependencies temporarily disabled
+// TODO: Re-enable after fixing online payment issues
+/*
 import axios from "axios";
 import {
 	sslCommerzSandbox,
 	sslCommerzStoreId,
 	sslCommerzStorePassword,
 } from "../config/dotenv.config";
+*/
 import Payment, { PaymentAttributes } from "../model/payment.model";
 import { generateTransactionId } from "../util";
 import { Op, Sequelize } from "sequelize";
 
 class PaymentService {
+	// COMMENTED OUT: SSLCommerz configuration temporarily disabled
+	/*
 	private SSLCommerzConfig: {
 		store_id: string;
 		store_passwd: string;
@@ -16,8 +22,11 @@ class PaymentService {
 	};
 
 	private BASE_URL: string;
+	*/
 
 	constructor() {
+		// COMMENTED OUT: SSLCommerz initialization temporarily disabled
+		/*
 		this.SSLCommerzConfig = {
 			store_id: sslCommerzStoreId,
 			store_passwd: sslCommerzStorePassword,
@@ -27,6 +36,7 @@ class PaymentService {
 		this.BASE_URL = this.SSLCommerzConfig.sandbox
 			? "https://sandbox.sslcommerz.com"
 			: "https://securepay.sslcommerz.com";
+		*/
 	}
 
 	createCashPayment = async (
@@ -52,6 +62,9 @@ class PaymentService {
 		}
 	};
 
+	// COMMENTED OUT: Online payment functionality temporarily disabled
+	// TODO: Re-enable after fixing online payment issues
+	/*
 	createOnlinePayment = async (
 		orderId: number,
 		amount: number,
@@ -121,6 +134,19 @@ class PaymentService {
 			
 			throw err;
 		}
+	};
+	*/
+
+	// TEMPORARY: Return null for online payments until re-enabled
+	createOnlinePayment = async (
+		orderId: number,
+		amount: number,
+		customerName: string,
+		customerEmail: string,
+		customerPhone: string,
+	): Promise<Payment | PaymentAttributes | null> => {
+		console.warn("[PaymentService.createOnlinePayment] Online payments temporarily disabled");
+		return null;
 	};
 
 	getPaymentByTransactionId = async (

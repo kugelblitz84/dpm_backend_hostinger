@@ -87,7 +87,16 @@ if (process.env.APP_STATIC_DIR) {
 
 export const staticDir: string = resolvedStaticDir;
 
+// COMMENTED OUT: SSLCommerz configuration temporarily disabled
+// TODO: Re-enable after fixing online payment issues
+/*
 export const sslCommerzStoreId: string = process.env.SSL_COMMERZ_STORE_ID || "";
 export const sslCommerzStorePassword: string =
 	process.env.SSL_COMMERZ_STORE_PASSWORD || "";
 export const sslCommerzSandbox: string = process.env.SSL_COMMERZ_SANDBOX || "";
+*/
+
+// TEMPORARY: Empty SSLCommerz config until re-enabled
+export const sslCommerzStoreId: string = "";
+export const sslCommerzStorePassword: string = "";
+export const sslCommerzSandbox: string = "";
