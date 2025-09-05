@@ -836,6 +836,24 @@ class OrderController {
 		}
 	};
 
+	// New: Customer can fetch own order history
+	getMyOrders = async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			const customer = (req as any).customer;
+			if (!customer?.customerId) {
+				return responseSender(res, 401, "Unauthorized.");
+			}
+			const orders = await this.orderService.getOrdersByCustomer(customer.customerId);
+			if (!orders) {
+				return responseSender(res, 200, "No orders found.", { orders: [] });
+			}
+			return responseSender(res, 200, "Orders fetched successfully.", { orders });
+		} catch (err: any) {
+			console.error('[OrderController.getMyOrders] ERROR:', err);
+			next(err);
+		}
+	};
+
 	deleteOrder = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const fetchedOrder = await this.orderService.getOrderById(

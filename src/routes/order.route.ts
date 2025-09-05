@@ -22,6 +22,13 @@ orderRouter.get(
 	orderController.getAllOrders,
 );
 
+// Customer: Get own order history
+orderRouter.get(
+	"/my",
+	authMiddleware.authenticate(["customer"]),
+	orderController.getMyOrders,
+);
+
 // 🔍 TEMPORARY DEBUG ENDPOINT - Remove after debugging
 orderRouter.get(
 	"/debug-info",
