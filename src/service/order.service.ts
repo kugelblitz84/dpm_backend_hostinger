@@ -122,7 +122,7 @@ class OrderService {
 
 			// Random staff auto-assignment disabled by default.
 			// To enable fair auto-assign when staffId is missing, flip the flag below.
-			const ENABLE_FAIR_AUTO_ASSIGN = false; // set to true to enable
+			const ENABLE_FAIR_AUTO_ASSIGN = true; // fair auto-assign enabled
 			if (ENABLE_FAIR_AUTO_ASSIGN && staffId == null) {
 				const fair = await this.staffService.getFairRandomStaff({ preferOnline: true, role: "agent" });
 				if (fair) newOrder.staffId = fair.staffId as any;
@@ -258,7 +258,7 @@ class OrderService {
 
 			// Random staff auto-assignment disabled by default.
 			// To enable fair auto-assign when staffId is missing, flip the flag below.
-			const ENABLE_FAIR_AUTO_ASSIGN = false; // set to true to enable
+			const ENABLE_FAIR_AUTO_ASSIGN = true; // fair auto-assign enabled
 			if (ENABLE_FAIR_AUTO_ASSIGN && staffId == null) {
 				const fair = await this.staffService.getFairRandomStaff({ preferOnline: true, role: "agent" });
 				if (fair) newOrder.staffId = fair.staffId as any;
