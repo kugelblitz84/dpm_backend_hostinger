@@ -1,6 +1,7 @@
 import Staff, { StaffAttributes } from "../model/staff.model";
 import { io } from "../server";
-import { Order, where, WhereOptions } from "sequelize";
+import { Op, fn, col, WhereOptions, Order as SequelizeOrder } from "sequelize";
+import Order from "../model/order.model";
 
 class StaffService {
 	registerStaff = async (
@@ -179,11 +180,85 @@ class StaffService {
 		}
 	};
 
+	// Fair auto-assignment: pick staff with the least active orders (tie-breaker random)
+	getFairRandomStaff = async (
+		options?: {
+			preferOnline?: boolean; // default true
+			role?: "agent" | "designer"; // default 'agent'
+		},
+	): Promise<Staff | StaffAttributes | null> => {
+		try {
+			const preferOnline = options?.preferOnline ?? true;
+			const role = options?.role ?? "agent";
+
+			// Step 1: Gather candidate staff (online preferred, else any), filtered by role
+			let candidates = await Staff.findAll({
+				where: preferOnline
+					? { status: "online", role }
+					: ({ role } as any),
+			});
+			if (!candidates.length && preferOnline) {
+				candidates = await Staff.findAll({ where: { role } });
+			}
+			if (!candidates.length) return null;
+
+			const candidateIds = candidates.map((s) => s.staffId);
+
+			// Step 2: Compute current load: count of active orders per staff
+			const activeStatuses = [
+				"order-request-received",
+				"consultation-in-progress",
+				"awaiting-advance-payment",
+				"advance-payment-received",
+				"design-in-progress",
+				"awaiting-design-approval",
+				"production-started",
+				"production-in-progress",
+				"ready-for-delivery",
+				"out-for-delivery",
+			];
+
+			const loads = await Order.findAll({
+				attributes: [
+					"staffId",
+					[fn("COUNT", col("orderId")), "count"],
+				],
+				where: {
+					staffId: { [Op.in]: candidateIds },
+					status: { [Op.in]: activeStatuses },
+				},
+				group: ["staffId"],
+				raw: true,
+			});
+
+			const countMap = new Map<number, number>();
+			candidateIds.forEach((id) => countMap.set(id, 0));
+			(loads as any[]).forEach((row) => {
+				const id = Number(row.staffId);
+				const c = parseInt(String(row.count), 10) || 0;
+				countMap.set(id, c);
+			});
+
+			let min = Infinity;
+			for (const c of countMap.values()) min = Math.min(min, c);
+			const leastLoaded = candidates.filter(
+				(s) => (countMap.get(s.staffId) ?? 0) === min,
+			);
+
+			const pick = leastLoaded[
+				Math.floor(Math.random() * (leastLoaded.length || 1))
+			];
+			return pick ? pick.toJSON() : null;
+		} catch (err: any) {
+			throw err;
+		}
+	};
+
 	getAllStaff = async (
 		filter: WhereOptions<StaffAttributes>,
 		limit: number,
 		offset: number,
-		order: Order,
+		order: SequelizeOrder,
 	): Promise<{ rows: Staff[] | StaffAttributes[]; count: number }> => {
 		try {
 			const staff = await Staff.findAndCountAll({

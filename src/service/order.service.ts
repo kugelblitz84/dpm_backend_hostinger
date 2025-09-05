@@ -120,8 +120,13 @@ class OrderService {
 				newOrder.courierAddress = null;
 			}
 
-			// Random staff auto-assignment disabled: require explicit staffId from client/middleware
-			// if (staffId == null) { /* previously picked a random staff */ }
+			// Random staff auto-assignment disabled by default.
+			// To enable fair auto-assign when staffId is missing, flip the flag below.
+			const ENABLE_FAIR_AUTO_ASSIGN = false; // set to true to enable
+			if (ENABLE_FAIR_AUTO_ASSIGN && staffId == null) {
+				const fair = await this.staffService.getFairRandomStaff({ preferOnline: true, role: "agent" });
+				if (fair) newOrder.staffId = fair.staffId as any;
+			}
 
 			console.log("[OrderService.createOrder] creating order with staffId:", newOrder.staffId);
 			const createdOrder = await Order.create({
@@ -251,8 +256,13 @@ class OrderService {
 				newOrder.courierAddress = null;
 			}
 
-			// Random staff auto-assignment disabled: require explicit staffId from client/middleware
-			// if (staffId == null) { /* previously picked a random staff */ }
+			// Random staff auto-assignment disabled by default.
+			// To enable fair auto-assign when staffId is missing, flip the flag below.
+			const ENABLE_FAIR_AUTO_ASSIGN = false; // set to true to enable
+			if (ENABLE_FAIR_AUTO_ASSIGN && staffId == null) {
+				const fair = await this.staffService.getFairRandomStaff({ preferOnline: true, role: "agent" });
+				if (fair) newOrder.staffId = fair.staffId as any;
+			}
 
 			console.log("[OrderService.createOrderRequest] creating order with staffId:", newOrder.staffId);
 			const createdOrder = await Order.create({
