@@ -170,9 +170,11 @@ class OrderMiddleware {
 						"Customer phone number must be a valid Bangladeshi number starting with 01 and 11 digits long.",
 				}),
 
-			staffId: Joi.number().optional().allow(null).messages({
+			// Enforce explicit staff selection: staffId is now required
+			staffId: Joi.number().required().messages({
 				"number.base": "staffId must be a number.",
 				"number.empty": "staffId cannot be empty.",
+				"any.required": "staffId is required.",
 			}),
 
 			method: Joi.string()
