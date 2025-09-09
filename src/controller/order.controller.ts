@@ -552,6 +552,35 @@ class OrderController {
 					);
 				}
 
+				// Move requested orders into active list after any non-zero payment
+				try {
+					const requestedStatuses = new Set<
+						| "order-request-received"
+						| "consultation-in-progress"
+						| "awaiting-advance-payment"
+					>(["order-request-received", "consultation-in-progress", "awaiting-advance-payment"]);
+					if (totalPaidAmount > 0 && requestedStatuses.has(order.status as any)) {
+						const moved = await this.orderService.updateOrder(
+							order.orderId,
+							order.deliveryDate,
+							"advance-payment-received",
+							order.courierAddress,
+							order.additionalNotes,
+						);
+
+						if (!moved) {
+							console.warn("[OrderController.createOrderPayment] 500 - Failed to move order to active after payment", {
+								orderId: order.orderId,
+								fromStatus: order.status,
+							});
+							return responseSender(res, 500, "Order update failed. Please try again.");
+						}
+					}
+				} catch (moveErr) {
+					console.error("[OrderController.createOrderPayment] ERROR moving order to active:", moveErr);
+					return responseSender(res, 500, "Order update failed. Please try again.");
+				}
+
 				return responseSender(
 					res,
 					201,
