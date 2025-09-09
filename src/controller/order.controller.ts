@@ -560,6 +560,12 @@ class OrderController {
 						| "awaiting-advance-payment"
 					>(["order-request-received", "consultation-in-progress", "awaiting-advance-payment"]);
 					if (totalPaidAmount > 0 && requestedStatuses.has(order.status as any)) {
+						console.log("[OrderController.createOrderPayment] Moving order to active after COD payment", {
+							orderId: order.orderId,
+							fromStatus: order.status,
+							totalPaidAmount,
+							orderTotal: order.orderTotalPrice,
+						});
 						const moved = await this.orderService.updateOrder(
 							order.orderId,
 							order.deliveryDate,
@@ -575,6 +581,13 @@ class OrderController {
 							});
 							return responseSender(res, 500, "Order update failed. Please try again.");
 						}
+
+						// notify clients of status change
+						io.emit("order-status-updated", {
+							orderId: order.orderId,
+							from: order.status,
+							to: "advance-payment-received",
+						});
 					}
 				} catch (moveErr) {
 					console.error("[OrderController.createOrderPayment] ERROR moving order to active:", moveErr);
