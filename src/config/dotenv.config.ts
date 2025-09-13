@@ -87,16 +87,16 @@ if (process.env.APP_STATIC_DIR) {
 
 export const staticDir: string = resolvedStaticDir;
 
-// COMMENTED OUT: SSLCommerz configuration temporarily disabled
-// TODO: Re-enable after fixing online payment issues
-/*
+// SSLCommerz configuration
 export const sslCommerzStoreId: string = process.env.SSL_COMMERZ_STORE_ID || "";
 export const sslCommerzStorePassword: string =
 	process.env.SSL_COMMERZ_STORE_PASSWORD || "";
-export const sslCommerzSandbox: string = process.env.SSL_COMMERZ_SANDBOX || "";
-*/
+export const sslCommerzSandbox: string = (process.env.SSL_COMMERZ_SANDBOX || "true").toString();
 
-// TEMPORARY: Empty SSLCommerz config until re-enabled
-export const sslCommerzStoreId: string = "";
-export const sslCommerzStorePassword: string = "";
-export const sslCommerzSandbox: string = "";
+// Callback URLs (can be overridden via env, otherwise default to backend routes)
+export const sslCommerzSuccessUrl: string =
+	process.env.SSL_COMMERZ_SUCCESS_URL || urlJoin(serverBaseUrl, "/api/order/payment/success");
+export const sslCommerzFailUrl: string =
+	process.env.SSL_COMMERZ_FAIL_URL || urlJoin(serverBaseUrl, "/api/order/payment/fail");
+export const sslCommerzCancelUrl: string =
+	process.env.SSL_COMMERZ_CANCEL_URL || urlJoin(serverBaseUrl, "/api/order/payment/cancel");

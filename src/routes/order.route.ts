@@ -114,9 +114,6 @@ orderRouter.post(
 	orderController.createOrderPayment,
 );
 
-// COMMENTED OUT: Online payment routes temporarily disabled
-// TODO: Re-enable after fixing online payment issues
-/*
 orderRouter.post(
 	"/payment/success",
 	strictLimiter,
@@ -130,23 +127,6 @@ orderRouter.post(
 	strictLimiter,
 	orderController.paymentCancel,
 );
-*/
-
-// TEMPORARY: Return 503 for online payment webhook endpoints
-orderRouter.post("/payment/success", strictLimiter, (req, res) => {
-	console.warn("[Route] Online payment webhooks temporarily disabled");
-	res.status(503).send("Online payment processing temporarily unavailable");
-});
-
-orderRouter.post("/payment/fail", strictLimiter, (req, res) => {
-	console.warn("[Route] Online payment webhooks temporarily disabled");
-	res.status(503).send("Online payment processing temporarily unavailable");
-});
-
-orderRouter.post("/payment/cancel", strictLimiter, (req, res) => {
-	console.warn("[Route] Online payment webhooks temporarily disabled");
-	res.status(503).send("Online payment processing temporarily unavailable");
-});
 
 orderRouter.delete(
 	"/:orderId",

@@ -1,43 +1,42 @@
-// COMMENTED OUT: Online payment dependencies temporarily disabled
-// TODO: Re-enable after fixing online payment issues
-/*
 import axios from "axios";
 import {
 	sslCommerzSandbox,
 	sslCommerzStoreId,
 	sslCommerzStorePassword,
+	sslCommerzSuccessUrl,
+	sslCommerzFailUrl,
+	sslCommerzCancelUrl,
 } from "../config/dotenv.config";
-*/
 import Payment, { PaymentAttributes } from "../model/payment.model";
 import { generateTransactionId } from "../util";
 import { Op, Sequelize } from "sequelize";
 
 class PaymentService {
-	// COMMENTED OUT: SSLCommerz configuration temporarily disabled
-	/*
-	private SSLCommerzConfig: {
-		store_id: string;
-		store_passwd: string;
-		sandbox: boolean;
-	};
+    private SSLCommerzConfig: {
+        store_id: string;
+        store_passwd: string;
+        sandbox: boolean;
+        success_url: string;
+        fail_url: string;
+        cancel_url: string;
+    };
 
-	private BASE_URL: string;
-	*/
+    private BASE_URL: string;
 
-	constructor() {
-		// COMMENTED OUT: SSLCommerz initialization temporarily disabled
-		/*
-		this.SSLCommerzConfig = {
-			store_id: sslCommerzStoreId,
-			store_passwd: sslCommerzStorePassword,
-			sandbox: sslCommerzSandbox === "true",
-		};
+    constructor() {
+        this.SSLCommerzConfig = {
+            store_id: sslCommerzStoreId,
+            store_passwd: sslCommerzStorePassword,
+            sandbox: (sslCommerzSandbox || "true").toLowerCase() === "true",
+            success_url: sslCommerzSuccessUrl,
+            fail_url: sslCommerzFailUrl,
+            cancel_url: sslCommerzCancelUrl,
+        };
 
-		this.BASE_URL = this.SSLCommerzConfig.sandbox
-			? "https://sandbox.sslcommerz.com"
-			: "https://securepay.sslcommerz.com";
-		*/
-	}
+        this.BASE_URL = this.SSLCommerzConfig.sandbox
+            ? "https://sandbox.sslcommerz.com"
+            : "https://securepay.sslcommerz.com";
+    }
 
 	createCashPayment = async (
 		orderId: number,
@@ -62,92 +61,73 @@ class PaymentService {
 		}
 	};
 
-	// COMMENTED OUT: Online payment functionality temporarily disabled
-	// TODO: Re-enable after fixing online payment issues
-	/*
-	createOnlinePayment = async (
-		orderId: number,
-		amount: number,
-		customerName: string,
-		customerEmail: string,
-		customerPhone: string,
-	): Promise<Payment | PaymentAttributes | null> => {
-		try {
-			const transactionId = await this.generateUniqueTransactionId();
+    createOnlinePayment = async (
+        orderId: number,
+        amount: number,
+        customerName: string,
+        customerEmail: string,
+        customerPhone: string,
+    ): Promise<Payment | PaymentAttributes | null> => {
+        try {
+            const transactionId = await this.generateUniqueTransactionId();
 
-			const expireInHours = 24;
+            const expireInHours = 24;
+            const expireDate = new Date();
+            expireDate.setHours(expireDate.getHours() + expireInHours);
+            const expireDateStr = expireDate.toISOString().replace("T", " ").substring(0, 19);
 
-			const expireDate = new Date();
-			expireDate.setHours(expireDate.getHours() + expireInHours);
-			const expireDateStr = expireDate
-				.toISOString()
-				.replace("T", " ")
-				.substring(0, 19); // Format: YYYY-MM-DD HH:MM:SS
+            const params = new URLSearchParams();
+            params.append("store_id", this.SSLCommerzConfig.store_id);
+            params.append("store_passwd", this.SSLCommerzConfig.store_passwd);
+            params.append("total_amount", amount.toString());
+            params.append("currency", "BDT");
+            params.append("tran_id", transactionId);
+            params.append("success_url", this.SSLCommerzConfig.success_url);
+            params.append("fail_url", this.SSLCommerzConfig.fail_url);
+            params.append("cancel_url", this.SSLCommerzConfig.cancel_url);
+            params.append("emi_option", "0");
+            params.append("cus_name", customerName);
+            params.append("cus_email", customerEmail);
+            params.append("cus_phone", customerPhone);
+            params.append("cus_add1", "N/A");
+            params.append("cus_city", "N/A");
+            params.append("cus_country", "Bangladesh");
+            params.append("shipping_method", "NO");
+            params.append("num_of_item", "1");
+            params.append("product_name", "Order Payment");
+            params.append("product_category", "General");
+            params.append("product_profile", "general");
+            params.append("expire_date", expireDateStr);
 
-			const paymentData = {
-				store_id: this.SSLCommerzConfig.store_id,
-				store_passwd: this.SSLCommerzConfig.store_passwd,
-				total_amount: amount.toString(),
-				currency: "BDT",
-				tran_id: transactionId,
-				success_url: "http://localhost:4000/api/order/payment/success",
-				fail_url: "http://localhost:4000/api/order/payment/fail",
-				cancel_url: "http://localhost:4000/api/order/payment/cancel",
-				cus_name: customerName,
-				cus_email: customerEmail,
-				cus_phone: customerPhone,
-				cus_add1: "N/A", // Optional
-				cus_city: "N/A", // Optional
-				cus_country: "N/A", // Optional
-				shipping_method: "NO", // Optional
-				product_name: "N/A", // Optional
-				product_category: "N/A", // Optional
-				product_profile: "general", // Optional
-				expire_date: expireDateStr,
-			};
+            const response = await axios.post(
+                `${this.BASE_URL}/gwprocess/v4/api.php`,
+                params.toString(),
+                {
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    timeout: 15000,
+                },
+            );
 
-			const response = await axios.post(
-				`${this.BASE_URL}/gwprocess/v4/api.php`,
-				paymentData,
-				{
-					headers: {
-						"Content-Type": "application/x-www-form-urlencoded",
-					},
-				},
-			);
+            const data = response?.data || {};
+            if (data.status === "SUCCESS" && data.GatewayPageURL) {
+                const createdPayment = await Payment.create({
+                    transactionId,
+                    orderId,
+                    paymentMethod: "online-payment",
+                    amount,
+                    isPaid: false,
+                    paymentLink: data.GatewayPageURL,
+                });
+                return createdPayment.toJSON();
+            }
 
-			if (response.data.status === "SUCCESS") {
-				const createdPayment = await Payment.create({
-					transactionId,
-					orderId,
-					paymentMethod: "online-payment",
-					amount,
-					isPaid: false,
-					paymentLink: response.data.GatewayPageURL,
-				});
-
-				return createdPayment.toJSON();
-			}
-
-			return null;
-		} catch (err: any) {
-			
-			throw err;
-		}
-	};
-	*/
-
-	// TEMPORARY: Return null for online payments until re-enabled
-	createOnlinePayment = async (
-		orderId: number,
-		amount: number,
-		customerName: string,
-		customerEmail: string,
-		customerPhone: string,
-	): Promise<Payment | PaymentAttributes | null> => {
-		console.warn("[PaymentService.createOnlinePayment] Online payments temporarily disabled");
-		return null;
-	};
+            const reason =
+                data.failedreason || data.reason || data.message || "SSLCommerz session init failed";
+            throw new Error(`[SSLCommerz] ${reason}`);
+        } catch (err: any) {
+            throw err;
+        }
+    };
 
 	getPaymentByTransactionId = async (
 		transactionId: string,
@@ -175,7 +155,7 @@ class PaymentService {
 	};
 
 	updatePaymentStatus = async (
-		transactionId: number,
+		transactionId: string,
 		isPaid: boolean,
 	): Promise<boolean> => {
 		try {
