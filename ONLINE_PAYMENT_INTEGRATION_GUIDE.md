@@ -1,6 +1,6 @@
 # Online Payment Integration (SSLCommerz)
 
-This guide explains how to initiate and complete an online payment for an order from the Admin Frontend using SSLCommerz. It covers request/response formats, expected redirects, and robust error handling (including common SSLCommerz errors).
+This guide reflects the intended workflow: the customer places an order request with method "online"; a staff member reviews and initiates the payment session; the customer completes payment via the generated link. It covers request/response formats, redirects, and robust error handling (including common SSLCommerz errors).
 
 
 ## Prerequisites
@@ -19,7 +19,17 @@ Notes
 - Strict rate limiter is applied on payment endpoints.
 
 
-## 1) Start an Online Payment Session
+## 1) Customer creates an order request (online method)
+
+Endpoint
+- POST /api/order/create-request
+- Auth: customer (also allowed for staff to assist)
+- Body includes order items and the platform records `method: "online"` on the order request. No payment is created at this point.
+
+Result
+- Order is created with status `order-request-received`, method `online`, paymentStatus `pending`, and paymentMethod set to `online-payment` for intent tracking. Staff will follow up to initiate the actual payment link.
+
+## 2) Staff starts an Online Payment Session
 
 Endpoint
 - POST /api/order/add-payment
@@ -75,18 +85,19 @@ Success (201)
 }
 ```
 
-UI flow
-- Redirect the user to `data.paymentLink` OR open in a new tab.
-- Keep `data.transactionId` in state (for reconciliation/debug).
+Staff UI flow
+- Copy or send `data.paymentLink` to the customer (or open in a new tab if assisting live).
+- Keep `data.transactionId` for reconciliation/debug.
 
 
-## 2) Gateway Callbacks (handled by backend)
+## 3) Customer pays via SSLCommerz (Gateway Callbacks handled by backend)
 
 SSLCommerz will POST to the backend callback URLs (success/fail/cancel). Backend behavior:
 - On success:
   - Validates the transaction (server-side integration).
   - Marks Payment.isPaid = true for the matching transaction.
   - Recomputes the Order paymentStatus: paid | partial | pending.
+  - If the order was in a requested state (order-request-received, consultation-in-progress, awaiting-advance-payment) and totalPaid > 0, the backend moves it to `advance-payment-received` (active).
   - Redirects the browser to `${FRONTEND_LANDING_PAGE_URL}/success-payment?transaction=...` (transaction summary JSON-encoded in query).
 - On fail/cancel:
   - Keeps isPaid = false (or ensures it’s false).
@@ -100,7 +111,7 @@ Frontend pages to implement
   - Show a clear failure message and link back to the order details; optionally allow retry.
 
 Fallback (optional polling)
-- After the user returns to admin, refresh the order detail/list to reflect updated paymentStatus.
+- After the user returns, refresh the order detail/list to reflect updated paymentStatus and, for request orders, the automatic move to active.
 - Mixed payment is supported (COD + Online); only payments with isPaid=true count towards the paid total.
 
 
@@ -152,7 +163,7 @@ Example error envelope
 
 Note on status moves
 - COD: requested orders are moved to an active status after any non-zero confirmed payment.
-- Online success: backend updates paymentStatus. If you need the same requested → active move on successful online payment, align with backend team (policy can be enabled similarly).
+- Online success: same behavior now applies—requested orders transition to `advance-payment-received` after the first successful online payment.
 
 
 ## 5) Sandbox vs Live

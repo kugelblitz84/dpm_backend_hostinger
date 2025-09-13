@@ -730,6 +730,33 @@ class OrderController {
 				);
 			}
 
+			// Move requested orders into active list after first successful online payment
+			try {
+				const requestedStatuses = new Set<
+					| "order-request-received"
+					| "consultation-in-progress"
+					| "awaiting-advance-payment"
+				>(["order-request-received", "consultation-in-progress", "awaiting-advance-payment"]);
+				if (totalPaidAmount > 0 && requestedStatuses.has(order.status as any)) {
+					const moved = await this.orderService.updateOrder(
+						order.orderId,
+						order.deliveryDate,
+						"advance-payment-received",
+						order.courierAddress,
+						order.additionalNotes,
+					);
+					if (moved) {
+						io.emit("order-status-updated", {
+							orderId: order.orderId,
+							from: order.status,
+							to: "advance-payment-received",
+						});
+					}
+				}
+			} catch (moveErr) {
+				console.error("[OrderController.paymentSuccess] ERROR moving order to active:", moveErr);
+			}
+
 			if (!transaction) {
 				return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
 			}

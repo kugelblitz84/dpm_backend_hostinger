@@ -276,11 +276,8 @@ class OrderService {
 				method: newOrder.method as any,
 				status: newOrder.status as any,
 				deliveryMethod: newOrder.deliveryMethod,
-				// COMMENTED OUT: Online payment hardcoded temporarily disabled
-				// TODO: Re-enable after fixing online payment issues
-				// paymentMethod: "online-payment",
-				// TEMPORARY: Use COD for order requests until online payments are re-enabled
-				paymentMethod: "cod-payment",
+				// Set the intended payment method for requests to online-payment.
+				paymentMethod: "online-payment",
 				paymentStatus: newOrder.paymentStatus as any,
 				couponId: newOrder.couponId,
 				courierId: newOrder.courierId,
