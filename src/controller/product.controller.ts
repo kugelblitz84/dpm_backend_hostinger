@@ -6,6 +6,11 @@ import { ProductModelAttributes } from "../model/product.model";
 import fs from "fs";
 import path from "path";
 import { staticDir } from "../config/dotenv.config";
+import OrderService from "../service/order.service";
+import ProductReview from "../model/product-review.model";
+import { serverBaseUrl } from "../config/dotenv.config";
+import urlJoin from "url-join";
+import { Sequelize } from "sequelize";
 
 class ProductController {
 	private productService: ProductService;
@@ -552,6 +557,55 @@ class ProductController {
 			});
 		} catch (err: any) {
 			
+			next(err);
+		}
+	};
+
+	getBestSellingByCategory = async (
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	) => {
+		try {
+			const orderService = new OrderService();
+			const topSelling = await orderService.getTopSellingProducts();
+
+			const products = await Promise.all(
+				topSelling.map(async (item: any) => {
+					const p = item.product as any;
+					const firstImage = p.images && p.images.length ? p.images[0].imageName : null;
+					const imageUrl = firstImage
+						? urlJoin(serverBaseUrl, "static", "product-images", firstImage)
+						: null;
+
+					// aggregate reviews: count and average
+					const agg = (await ProductReview.findAll({
+						attributes: [
+							[Sequelize.fn("COUNT", Sequelize.col("productReviewId")), "reviewCount"],
+							[Sequelize.fn("AVG", Sequelize.col("rating")), "averageRating"],
+						],
+						where: { productId: p.productId },
+						raw: true,
+					})) as any;
+
+					const reviewCount = agg && agg[0] && agg[0].reviewCount ? parseInt(agg[0].reviewCount, 10) : 0;
+					const averageRating = agg && agg[0] && agg[0].averageRating ? parseFloat(Number(agg[0].averageRating).toFixed(1)) : 0;
+
+					return {
+						productId: p.productId,
+						name: p.name,
+						slug: p.slug,
+						basePrice: p.basePrice,
+						categoryId: p.category ? p.category.categoryId : null,
+						imageUrl,
+						reviewCount,
+						averageRating,
+					};
+				}),
+			);
+
+			return res.status(200).json({ status: 200, products });
+		} catch (err: any) {
 			next(err);
 		}
 	};

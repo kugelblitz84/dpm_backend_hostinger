@@ -24,6 +24,12 @@ productRouter.get(
 	productController.getRandomProducts,
 );
 
+// Public endpoint for best-selling products grouped by category (simple list)
+productRouter.get(
+	"/best-selling-by-category",
+	productController.getBestSellingByCategory,
+);
+
 productRouter.get(
 	"/:productId",
 	productMiddleware.validateProductFetchById,
