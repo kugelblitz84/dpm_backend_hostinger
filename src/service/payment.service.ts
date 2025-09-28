@@ -62,72 +62,81 @@ class PaymentService {
 	};
 
     createOnlinePayment = async (
-        orderId: number,
-        amount: number,
-        customerName: string,
-        customerEmail: string,
-        customerPhone: string,
-    ): Promise<Payment | PaymentAttributes | null> => {
-        try {
-            const transactionId = await this.generateUniqueTransactionId();
+			orderId: number,
+			_amount: number, // ignored, always use latest due
+			customerName: string,
+			customerEmail: string,
+			customerPhone: string,
+		): Promise<Payment | PaymentAttributes | null> => {
+			try {
+				const transactionId = await this.generateUniqueTransactionId();
 
-            const expireInHours = 24;
-            const expireDate = new Date();
-            expireDate.setHours(expireDate.getHours() + expireInHours);
-            const expireDateStr = expireDate.toISOString().replace("T", " ").substring(0, 19);
+				// Fetch order and payments to calculate latest due
+				const Order = require("../model/order.model").default;
+				const order = await Order.findByPk(orderId);
+				if (!order) throw new Error("Order not found");
+				const payments = await Payment.findAll({ where: { orderId } });
+				let paid = 0;
+				payments.forEach((p: any) => { if (p.isPaid) paid += p.amount; });
+				const due = Math.max(order.orderTotalPrice - paid, 0);
 
-            const params = new URLSearchParams();
-            params.append("store_id", this.SSLCommerzConfig.store_id);
-            params.append("store_passwd", this.SSLCommerzConfig.store_passwd);
-            params.append("total_amount", amount.toString());
-            params.append("currency", "BDT");
-            params.append("tran_id", transactionId);
-            params.append("success_url", this.SSLCommerzConfig.success_url);
-            params.append("fail_url", this.SSLCommerzConfig.fail_url);
-            params.append("cancel_url", this.SSLCommerzConfig.cancel_url);
-            params.append("emi_option", "0");
-            params.append("cus_name", customerName);
-            params.append("cus_email", customerEmail);
-            params.append("cus_phone", customerPhone);
-            params.append("cus_add1", "N/A");
-            params.append("cus_city", "N/A");
-            params.append("cus_country", "Bangladesh");
-            params.append("shipping_method", "NO");
-            params.append("num_of_item", "1");
-            params.append("product_name", "Order Payment");
-            params.append("product_category", "General");
-            params.append("product_profile", "general");
-            params.append("expire_date", expireDateStr);
+				const expireInHours = 24;
+				const expireDate = new Date();
+				expireDate.setHours(expireDate.getHours() + expireInHours);
+				const expireDateStr = expireDate.toISOString().replace("T", " ").substring(0, 19);
 
-            const response = await axios.post(
-                `${this.BASE_URL}/gwprocess/v4/api.php`,
-                params.toString(),
-                {
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    timeout: 15000,
-                },
-            );
+				const params = new URLSearchParams();
+				params.append("store_id", this.SSLCommerzConfig.store_id);
+				params.append("store_passwd", this.SSLCommerzConfig.store_passwd);
+				params.append("total_amount", due.toString());
+				params.append("currency", "BDT");
+				params.append("tran_id", transactionId);
+				params.append("success_url", this.SSLCommerzConfig.success_url);
+				params.append("fail_url", this.SSLCommerzConfig.fail_url);
+				params.append("cancel_url", this.SSLCommerzConfig.cancel_url);
+				params.append("emi_option", "0");
+				params.append("cus_name", customerName);
+				params.append("cus_email", customerEmail);
+				params.append("cus_phone", customerPhone);
+				params.append("cus_add1", "N/A");
+				params.append("cus_city", "N/A");
+				params.append("cus_country", "Bangladesh");
+				params.append("shipping_method", "NO");
+				params.append("num_of_item", "1");
+				params.append("product_name", "Order Payment");
+				params.append("product_category", "General");
+				params.append("product_profile", "general");
+				params.append("expire_date", expireDateStr);
 
-            const data = response?.data || {};
-            if (data.status === "SUCCESS" && data.GatewayPageURL) {
-                const createdPayment = await Payment.create({
-                    transactionId,
-                    orderId,
-                    paymentMethod: "online-payment",
-                    amount,
-                    isPaid: false,
-                    paymentLink: data.GatewayPageURL,
-                });
-                return createdPayment.toJSON();
-            }
+				const response = await axios.post(
+					`${this.BASE_URL}/gwprocess/v4/api.php`,
+					params.toString(),
+					{
+						headers: { "Content-Type": "application/x-www-form-urlencoded" },
+						timeout: 15000,
+					},
+				);
 
-            const reason =
-                data.failedreason || data.reason || data.message || "SSLCommerz session init failed";
-            throw new Error(`[SSLCommerz] ${reason}`);
-        } catch (err: any) {
-            throw err;
-        }
-    };
+				const data = response?.data || {};
+				if (data.status === "SUCCESS" && data.GatewayPageURL) {
+					const createdPayment = await Payment.create({
+						transactionId,
+						orderId,
+						paymentMethod: "online-payment",
+						amount: due,
+						isPaid: false,
+						paymentLink: data.GatewayPageURL,
+					});
+					return createdPayment.toJSON();
+				}
+
+				const reason =
+					data.failedreason || data.reason || data.message || "SSLCommerz session init failed";
+				throw new Error(`[SSLCommerz] ${reason}`);
+			} catch (err: any) {
+				throw err;
+			}
+		};
 
 	getPaymentByTransactionId = async (
 		transactionId: string,
