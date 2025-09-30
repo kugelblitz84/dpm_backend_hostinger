@@ -78,7 +78,28 @@ class PaymentService {
 				const payments = await Payment.findAll({ where: { orderId } });
 				let paid = 0;
 				payments.forEach((p: any) => { if (p.isPaid) paid += p.amount; });
-				const due = Math.max(order.orderTotalPrice - paid, 0);
+				// Use the raw amount passed by the caller. Validate it is a positive number.
+				const requestedAmount = Number(_amount) || 0;
+				if (requestedAmount <= 0) {
+					throw new Error("Invalid payment amount requested. Amount must be greater than zero.");
+				}
+
+				// Compute remaining due for the order
+				const due = Math.max(Number(order.orderTotalPrice || 0) - paid, 0);
+
+				// Guard: if nothing is due, reject creating an online payment link
+				if (due === 0) {
+					throw new Error("The order is already fully paid. No payment link is necessary.");
+				}
+
+				// Guard: requested amount must not exceed remaining due
+				if (requestedAmount > due) {
+					throw new Error(`Requested amount (${requestedAmount}) exceeds remaining due (${due}). Please request an amount less than or equal to the remaining due.`);
+				}
+
+				// NOTE: per change request, we no longer force the link amount to the remaining due.
+				// The admin-supplied amount will be used even if it's different from the computed due.
+				const amountToCharge = requestedAmount;
 
 				const expireInHours = 24;
 				const expireDate = new Date();
@@ -88,7 +109,7 @@ class PaymentService {
 				const params = new URLSearchParams();
 				params.append("store_id", this.SSLCommerzConfig.store_id);
 				params.append("store_passwd", this.SSLCommerzConfig.store_passwd);
-				params.append("total_amount", due.toString());
+				params.append("total_amount", amountToCharge.toString());
 				params.append("currency", "BDT");
 				params.append("tran_id", transactionId);
 				params.append("success_url", this.SSLCommerzConfig.success_url);
@@ -123,7 +144,7 @@ class PaymentService {
 						transactionId,
 						orderId,
 						paymentMethod: "online-payment",
-						amount: due,
+						amount: amountToCharge,
 						isPaid: false,
 						paymentLink: data.GatewayPageURL,
 					});
