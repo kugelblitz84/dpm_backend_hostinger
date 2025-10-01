@@ -454,18 +454,19 @@ class OrderController {
 						(fetchedOrder.orderTotalPrice *
 							staff.commissionPercentage) /
 						100;
-					const isUpdatedBalance =
-						await this.staffService.updateStaffBalance(
+					// Commission crediting is disabled for both admin and staff updates.
+					// To re-enable crediting for admin updates only, uncomment the block below:
+					/*
+					if (requesterRole === "admin") {
+						const isUpdatedBalance = await this.staffService.updateStaffBalance(
 							commission,
 							staff.staffId,
 						);
-					if (!isUpdatedBalance) {
-						return responseSender(
-							res,
-							500,
-							"Order update failed. Please try again.",
-						);
+						if (!isUpdatedBalance) {
+							return responseSender(res, 500, "Order update failed. Please try again.");
+						}
 					}
+					*/
 				}
 			}
 
