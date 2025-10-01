@@ -497,24 +497,35 @@ class OrderService {
 				additionalNotes,
 			};
 
-			// Documentation: Conditionally add staffUpdateCount to the update object if provided.
+			// Conditionally add staffUpdateCount to the update object if provided.
 			if (newStaffUpdateCount !== undefined) {
 				updateFields.staffUpdateCount = newStaffUpdateCount;
 			}
 
+			console.log('[OrderService.updateOrder] checking order existence before update', { orderId });
+			const existing = await Order.findByPk(orderId);
+			if (!existing) {
+				console.warn('[OrderService.updateOrder] order not found for update', { orderId });
+				return false;
+			}
+
+			// Log the existing DB row so we can compare incoming payload vs stored values
+			console.log('[OrderService.updateOrder] existing order before update', existing.toJSON());
 			console.log('[OrderService.updateOrder] updating order', { orderId, updateFields });
 			const [affectedRows] = await Order.update(updateFields, {
 				where: { orderId },
 			});
-			console.log('[OrderService.updateOrder] Order.update result', { orderId, affectedRows });
+			console.log('[OrderService.updateOrder] update affectedRows', { orderId, affectedRows });
 
-			if (affectedRows === 0) {
-				return false;
-			}
+			// Fetch the order again to verify current DB state after update attempt
+			const after = await Order.findByPk(orderId);
+			console.log('[OrderService.updateOrder] order after update', after ? after.toJSON() : null);
 
+			// If the order exists but affectedRows is 0, it likely means the update did not change values
+			// (e.g., status remained the same). Treat that as success rather than failure.
 			return true;
 		} catch (err: any) {
-			
+			console.error('[OrderService.updateOrder] ERROR', err);
 			throw err;
 		}
 	};
@@ -528,9 +539,10 @@ class OrderService {
 			);
 			return affectedRows > 0;
 		} catch (err: any) {
-			
+			console.error('[OrderService.resetStaffUpdateCount] ERROR', err);
 			throw err;
 		}
+
 	};
 
 	updateOrderPaymentStatus = async (
