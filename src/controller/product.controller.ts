@@ -581,7 +581,8 @@ class ProductController {
 					// aggregate reviews: count and average
 					const agg = (await ProductReview.findAll({
 						attributes: [
-							[Sequelize.fn("COUNT", Sequelize.col("productReviewId")), "reviewCount"],
+							// use actual PK column name `reviewId` (not productReviewId)
+							[Sequelize.fn("COUNT", Sequelize.col("reviewId")), "reviewCount"],
 							[Sequelize.fn("AVG", Sequelize.col("rating")), "averageRating"],
 						],
 						where: { productId: p.productId },
