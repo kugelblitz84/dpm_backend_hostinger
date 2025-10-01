@@ -45,11 +45,34 @@ class PaymentService {
 		try {
 			const transactionId = await this.generateUniqueTransactionId();
 
+			// Validate amount against order due
+			const Order = require("../model/order.model").default;
+			const order = await Order.findByPk(orderId);
+			if (!order) throw new Error("Order not found");
+
+			const payments = await Payment.findAll({ where: { orderId } });
+			let paid = 0;
+			payments.forEach((p: any) => { if (p.isPaid) paid += p.amount; });
+
+			const requestedAmount = Number(amount) || 0;
+			if (requestedAmount <= 0) {
+				throw new Error("Invalid payment amount requested. Amount must be greater than zero.");
+			}
+
+			const due = Math.max(Number(order.orderTotalPrice || 0) - paid, 0);
+			if (due === 0) {
+				throw new Error("The order is already fully paid. No further payment is necessary.");
+			}
+
+			if (requestedAmount > due) {
+				throw new Error(`Requested amount (${requestedAmount}) exceeds remaining due (${due}). Please request an amount less than or equal to the remaining due.`);
+			}
+
 			const createdPayment = await Payment.create({
 				transactionId,
 				orderId,
 				paymentMethod: "cod-payment",
-				amount,
+				amount: requestedAmount,
 				isPaid: true,
 				paymentLink: null,
 			});
