@@ -354,6 +354,17 @@ class OrderController {
 
 	updateOrder = async (req: Request, res: Response, next: NextFunction) => {
 		try {
+			console.log('[OrderController.updateOrder] ENTER', {
+				path: req.path,
+				method: req.method,
+				user: {
+					admin: Boolean((req as any).admin),
+					staffRole: (req as any).staff?.role,
+					staffId: (req as any).staff?.staffId,
+				},
+				payload: (req as any).validatedValue,
+			});
+
 			const newOrder = {
 				orderId: (req as any).validatedValue.orderId,
 				deliveryDate: (req as any).validatedValue.deliveryDate,
@@ -365,6 +376,12 @@ class OrderController {
 			const fetchedOrder = await this.orderService.getOrderById(
 				newOrder.orderId,
 			);
+			console.log('[OrderController.updateOrder] fetchedOrder', {
+				orderId: fetchedOrder?.orderId,
+				status: fetchedOrder?.status,
+				orderTotalPrice: fetchedOrder?.orderTotalPrice,
+				paymentsCount: Array.isArray(fetchedOrder?.payments) ? fetchedOrder.payments.length : 0,
+			});
 			if (!fetchedOrder) {
 				return responseSender(res, 404, "Order not found");
 			}
@@ -417,8 +434,19 @@ class OrderController {
 						totalPaidAmount += payment.amount;
 					}
 				});
+				console.log('[OrderController.updateOrder] totalPaidAmount computed', {
+					orderId: newOrder.orderId,
+					totalPaidAmount,
+					orderTotalPrice: fetchedOrder.orderTotalPrice,
+					payments,
+				});
 
 				if (totalPaidAmount !== fetchedOrder.orderTotalPrice) {
+					console.warn('[OrderController.updateOrder] cannot complete order - payment mismatch', {
+						orderId: newOrder.orderId,
+						totalPaidAmount,
+						orderTotalPrice: fetchedOrder.orderTotalPrice,
+					});
 					return responseSender(
 						res,
 						400,
@@ -428,6 +456,15 @@ class OrderController {
 			}
 
 			// Documentation: Pass the newStaffUpdateCount to the service layer.
+			console.log('[OrderController.updateOrder] calling orderService.updateOrder', {
+				orderId: newOrder.orderId,
+				status: newOrder.status,
+				deliveryDate: newOrder.deliveryDate,
+				courierAddress: newOrder.courierAddress,
+				additionalNotes: newOrder.additionalNotes,
+				newStaffUpdateCount,
+			});
+
 			const updatedOrder = await this.orderService.updateOrder(
 				newOrder.orderId,
 				newOrder.deliveryDate,
@@ -436,6 +473,8 @@ class OrderController {
 				newOrder.additionalNotes,
 				newStaffUpdateCount, // Documentation: Pass the updated staff update count
 			);
+
+			console.log('[OrderController.updateOrder] orderService.updateOrder result', { orderId: newOrder.orderId, updatedOrder });
 
 			if (!updatedOrder) {
 				return responseSender(
@@ -454,19 +493,13 @@ class OrderController {
 						(fetchedOrder.orderTotalPrice *
 							staff.commissionPercentage) /
 						100;
-					// Commission crediting is disabled for both admin and staff updates.
-					// To re-enable crediting for admin updates only, uncomment the block below:
-					/*
-					if (requesterRole === "admin") {
-						const isUpdatedBalance = await this.staffService.updateStaffBalance(
-							commission,
-							staff.staffId,
-						);
-						if (!isUpdatedBalance) {
-							return responseSender(res, 500, "Order update failed. Please try again.");
-						}
-					}
-					*/
+					console.log('[OrderController.updateOrder] commission calculation', {
+						orderId: newOrder.orderId,
+						staffId: staff.staffId,
+						commission,
+						requesterRole,
+					});
+					console.log('[OrderController.updateOrder] commission crediting is currently disabled (skipped)');
 				}
 			}
 

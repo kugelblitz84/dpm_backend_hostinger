@@ -502,9 +502,11 @@ class OrderService {
 				updateFields.staffUpdateCount = newStaffUpdateCount;
 			}
 
+			console.log('[OrderService.updateOrder] updating order', { orderId, updateFields });
 			const [affectedRows] = await Order.update(updateFields, {
 				where: { orderId },
 			});
+			console.log('[OrderService.updateOrder] Order.update result', { orderId, affectedRows });
 
 			if (affectedRows === 0) {
 				return false;
@@ -536,15 +538,13 @@ class OrderService {
 		paymentStatus: "pending" | "partial" | "paid",
 	): Promise<boolean> => {
 		try {
-			const order = await Order.update(
+			console.log('[OrderService.updateOrderPaymentStatus] updating paymentStatus', { orderId, paymentStatus });
+			const result = await Order.update(
 				{ paymentStatus },
 				{ where: { orderId } },
 			);
-
-			if (!order) {
-				return false;
-			}
-
+			console.log('[OrderService.updateOrderPaymentStatus] update result', { orderId, result });
+			if (!result) return false;
 			return true;
 		} catch (err: any) {
 			
