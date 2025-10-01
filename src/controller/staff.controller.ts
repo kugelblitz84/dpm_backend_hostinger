@@ -399,6 +399,10 @@ class StaffController {
 			const searchTerm = (req as any).validatedValue.searchTerm;
 			const searchBy = (req as any).validatedValue.searchBy;
 			const role = (req as any).validatedValue.role;
+
+			// If the caller is not an admin and did not explicitly request a role,
+			// default to returning agents only so frontend checkout doesn't show designers.
+			const callerIsAdmin = Boolean((req as any).admin);
 			const currentPage = parseInt((req as any).validatedValue.page || 1);
 			const limitPerPage = parseInt(
 				(req as any).validatedValue.limit || 20,
@@ -409,6 +413,9 @@ class StaffController {
 
 			if (role) {
 				filter.role = role;
+			} else if (!callerIsAdmin) {
+				// Default non-admin callers to agents only
+				filter.role = "agent" as any;
 			}
 
 			if (searchTerm && searchBy) {

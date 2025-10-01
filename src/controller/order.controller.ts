@@ -79,7 +79,13 @@ class OrderController {
 			// Documentation: Override staffId with authenticated staff only when the request
 			// did not explicitly provide a staffId. This preserves frontend-supplied staffId.
 			if ((req as any).staff?.staffId && (req as any).validatedValue.staffId == null) {
-				newOrder.staffId = (req as any).staff.staffId;
+				// Prevent designers from being auto-assigned to new orders
+				if ((req as any).staff?.role === "designer") {
+					// Leave staffId as null so the order can be assigned to an agent later
+					newOrder.staffId = null;
+				} else {
+					newOrder.staffId = (req as any).staff.staffId;
+				}
 			}
 
 			if (req.files && (req.files as Express.Multer.File[]).length > 0) {
@@ -115,6 +121,16 @@ class OrderController {
 					: newOrder.amount === 0
 						? "pending"
 						: "partial";
+
+			// If the client explicitly provided a staffId, ensure it is not a designer
+			if (newOrder.staffId) {
+				const candidateStaff = await this.staffService.getStaffById(
+					newOrder.staffId,
+				);
+				if (candidateStaff && candidateStaff.role === "designer") {
+					return responseSender(res, 400, "Cannot assign a designer to an order.");
+				}
+			}
 
 			const createdOrder = await this.orderService.createOrder(
 				newOrder.customerName,
@@ -203,6 +219,7 @@ class OrderController {
 			}
 			next(err);
 		}
+
 	};
 
 	createOrderRequest = async (
@@ -243,7 +260,22 @@ class OrderController {
 			// Documentation: Override staffId with authenticated staff only when the request
 			// did not explicitly provide a staffId. This preserves frontend-supplied staffId.
 			if ((req as any).staff?.staffId && (req as any).validatedValue.staffId == null) {
-				newOrder.staffId = (req as any).staff.staffId;
+				// Prevent designers from being auto-assigned to new orders
+				if ((req as any).staff?.role === "designer") {
+					newOrder.staffId = null;
+				} else {
+					newOrder.staffId = (req as any).staff.staffId;
+				}
+			}
+
+			// If the client explicitly provided a staffId, ensure it is not a designer
+			if (newOrder.staffId) {
+				const candidateStaff = await this.staffService.getStaffById(
+					newOrder.staffId,
+				);
+				if (candidateStaff && candidateStaff.role === "designer") {
+					return responseSender(res, 400, "Cannot assign a designer to an order.");
+				}
 			}
 
 			if (req.files && (req.files as Express.Multer.File[]).length > 0) {

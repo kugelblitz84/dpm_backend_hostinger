@@ -150,9 +150,9 @@ class StaffService {
 
 	getRandomStaff = async (): Promise<Staff | StaffAttributes | null> => {
 		try {
-			// Fetch all online staff first
+			// Fetch all online agents first (exclude designers)
 			const activeStaff = await Staff.findAll({
-				where: { status: "online" },
+				where: { status: "online", role: "agent" },
 			});
 
 			// If active staff exist, pick a random one
@@ -163,8 +163,8 @@ class StaffService {
 				return activeStaff[randomIndex].toJSON();
 			}
 
-			// If no active staff, fetch all staff
-			const allStaff = await Staff.findAll();
+			// If no active agents, fetch all agents (exclude designers)
+			const allStaff = await Staff.findAll({ where: { role: "agent" } });
 
 			// If no staff exist at all, return null
 			if (!allStaff.length) {
