@@ -698,6 +698,16 @@ class OrderController {
 			}
 		} catch (err: any) {
 			console.error('[OrderController.createOrderPayment] ERROR:', err);
+			// Map known validation/service errors to HTTP 400 so frontend gets a proper client error
+			const msg = err?.message || '';
+			if (
+				msg.includes('exceeds remaining due') ||
+				msg.includes('already fully paid') ||
+				msg.includes('Invalid payment amount')
+			) {
+				return responseSender(res, 400, msg);
+			}
+			// unknown error: pass to global error handler
 			next(err);
 		}
 	};
