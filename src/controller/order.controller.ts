@@ -122,15 +122,8 @@ class OrderController {
 						? "pending"
 						: "partial";
 
-			// If the client explicitly provided a staffId, ensure it is not a designer
-			if (newOrder.staffId) {
-				const candidateStaff = await this.staffService.getStaffById(
-					newOrder.staffId,
-				);
-				if (candidateStaff && candidateStaff.role === "designer") {
-					return responseSender(res, 400, "Cannot assign a designer to an order.");
-				}
-			}
+			// If the client explicitly provided a staffId, allow designer or agent.
+			// (Automated random assignment still excludes designers; see OrderService logic.)
 
 			const createdOrder = await this.orderService.createOrder(
 				newOrder.customerName,
@@ -268,15 +261,8 @@ class OrderController {
 				}
 			}
 
-			// If the client explicitly provided a staffId, ensure it is not a designer
-			if (newOrder.staffId) {
-				const candidateStaff = await this.staffService.getStaffById(
-					newOrder.staffId,
-				);
-				if (candidateStaff && candidateStaff.role === "designer") {
-					return responseSender(res, 400, "Cannot assign a designer to an order.");
-				}
-			}
+			// If the client explicitly provided a staffId, allow designer or agent.
+			// (Automated random assignment still excludes designers; see OrderService logic.)
 
 			if (req.files && (req.files as Express.Multer.File[]).length > 0) {
 				(newOrder as any).images = req.files;
