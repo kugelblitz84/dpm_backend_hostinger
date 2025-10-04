@@ -114,19 +114,15 @@ orderRouter.post(
 	orderController.createOrderPayment,
 );
 
-orderRouter.post(
-	"/payment/success",
-	strictLimiter,
-	orderController.paymentSuccess,
-);
+// Accept both POST (gateway callback) and GET (fallback/manual open) for payment redirects
+orderRouter.post("/payment/success", strictLimiter, orderController.paymentSuccess);
+orderRouter.get("/payment/success", strictLimiter, orderController.paymentSuccess);
 
 orderRouter.post("/payment/fail", strictLimiter, orderController.paymentFail);
+orderRouter.get("/payment/fail", strictLimiter, orderController.paymentFail);
 
-orderRouter.post(
-	"/payment/cancel",
-	strictLimiter,
-	orderController.paymentCancel,
-);
+orderRouter.post("/payment/cancel", strictLimiter, orderController.paymentCancel);
+orderRouter.get("/payment/cancel", strictLimiter, orderController.paymentCancel);
 
 orderRouter.delete(
 	"/:orderId",
