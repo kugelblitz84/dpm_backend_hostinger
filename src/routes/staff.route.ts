@@ -33,7 +33,7 @@ staffRouter.post(
 staffRouter.post(
 	"/avatar",
 	strictLimiter,
-	authMiddleware.authenticate(["agent", "designer"]),
+	authMiddleware.authenticate(["agent", "designer", "offline-agent"]),
 	staffImageUploader.uploader("avatars").single("avatar"),
 	staffImageUploader.compressImage,
 	staffController.uploadStaffAvatar,
@@ -43,7 +43,7 @@ staffRouter.post(
 staffRouter.put(
 	"/",
 	strictLimiter,
-	authMiddleware.authenticate(["agent", "designer"]),
+	authMiddleware.authenticate(["agent", "designer", "offline-agent"]),
 	staffImageUploader.uploader("avatars").single("avatar"),
 	staffImageUploader.compressImage,
 	staffMiddleware.validateStaffUpdate,

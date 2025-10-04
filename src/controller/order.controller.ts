@@ -404,40 +404,14 @@ class OrderController {
 				return responseSender(res, 404, "Order not found");
 			}
 
-			// Documentation: Extract the role and ID of the authenticated requester.
-			const requesterRole =
-				(req as any).staff?.role || (req as any).admin?.role;
-			const requesterStaffId = (req as any).staff?.staffId;
-
-			let newStaffUpdateCount: number | undefined = undefined; // Documentation: Variable to hold the new staff update count.
-
-			// Documentation: Implement the one-time update logic for agents and designers.
-			if (requesterRole === "admin") {
-				// Documentation: If the requester is an admin, they have full permission.
-				// Resetting staffUpdateCount to 0 after admin update allows agent/designer another single update.
-				await this.orderService.resetStaffUpdateCount(newOrder.orderId);
-			} else if (
-				requesterRole === "agent" ||
-				requesterRole === "designer"
-			) {
-				// Documentation: For agents and designers, check if the order has already been updated by staff.
-				if (fetchedOrder.staffUpdateCount >= 1) {
-					return responseSender(
-						res,
-						403,
-						"Admin permission is required for further order updates by staff.",
-					);
-				}
-				// Documentation: If this is the first update by an agent or designer, increment the count.
-				newStaffUpdateCount = fetchedOrder.staffUpdateCount + 1;
-			} else {
-				// Documentation: Deny access if the role is not recognized for update.
-				return responseSender(
-					res,
-					403,
-					"You do not have permission to update this order.",
-				);
+			// Extract requester role. Allow admin/agent/designer to update without restrictions.
+			const requesterRole = (req as any).staff?.role || (req as any).admin?.role;
+			if (!requesterRole || !["admin", "agent", "designer", "offline-agent"].includes(requesterRole)) {
+				return responseSender(res, 403, "You do not have permission to update this order.");
 			}
+
+			// Turned OFF: staff one-time update restriction. We no longer modify or check staffUpdateCount.
+			let newStaffUpdateCount: number | undefined = undefined;
 
 			// TODO: If the payment fully completed then only update the order status as completed
 			// TODO: if the order complete then add the commission on staff balance
@@ -489,7 +463,7 @@ class OrderController {
 				newOrder.status,
 				newOrder.courierAddress,
 				newOrder.additionalNotes,
-				newStaffUpdateCount, // Documentation: Pass the updated staff update count
+				newStaffUpdateCount, // remains undefined now that restriction is disabled
 			);
 
 			console.log('[OrderController.updateOrder] orderService.updateOrder result', { orderId: newOrder.orderId, updatedOrder });
@@ -705,8 +679,7 @@ class OrderController {
 		next: NextFunction,
 	) => {
 		try {
-			const payload: any = req.method === 'GET' ? (req.query || {}) : (req.body || {});
-			const transactionId = payload.tran_id;
+			const transactionId = req.body.tran_id;
 			const payment =
 				await this.paymentService.getPaymentByTransactionId(
 					transactionId,
@@ -720,16 +693,16 @@ class OrderController {
 				);
 			}
 			const orderId = payment.orderId;
-			const valId = payload.val_id;
-			const amount = payload.amount;
-			const storeAmount = payload.store_amount;
-			const cardType = payload.card_type;
-			const bankTransactionId = payload.bank_tran_id;
-			const status = payload.status;
-			const transactionDate = payload.tran_date;
-			const currency = payload.currency;
-			const cardIssuer = payload.card_issuer;
-			const cardBrand = payload.card_brand;
+			const valId = req.body.val_id;
+			const amount = req.body.amount;
+			const storeAmount = req.body.store_amount;
+			const cardType = req.body.card_type;
+			const bankTransactionId = req.body.bank_tran_id;
+			const status = req.body.status;
+			const transactionDate = req.body.tran_date;
+			const currency = req.body.currency;
+			const cardIssuer = req.body.card_issuer;
+			const cardBrand = req.body.card_brand;
 
 			// create a transaction
 			const transaction = await this.transactionService.createTransaction(
@@ -835,8 +808,7 @@ class OrderController {
 
 	paymentFail = async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const payload: any = req.method === 'GET' ? (req.query || {}) : (req.body || {});
-			const transactionId = payload.tran_id;
+			const transactionId = req.body.tran_id;
 			const order =
 				await this.paymentService.getPaymentByTransactionId(
 					transactionId,
@@ -870,8 +842,7 @@ class OrderController {
 
 	paymentCancel = async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const payload: any = req.method === 'GET' ? (req.query || {}) : (req.body || {});
-			const transactionId = payload.tran_id;
+			const transactionId = req.body.tran_id;
 			const order =
 				await this.paymentService.getPaymentByTransactionId(
 					transactionId,
@@ -1012,7 +983,7 @@ class OrderController {
 			}
 
 			// Apply staffId filter ONLY for agents
-			if (requesterRole === "agent" && staffId) {
+			if ((requesterRole === "agent" || requesterRole === "offline-agent") && staffId) {
 				// Agents see only their assigned orders
 				filter.staffId = staffId; // 🔧 FIX: Actually add the staffId to the filter
 			}
@@ -1074,7 +1045,7 @@ class OrderController {
 
 			// 🎯 FINAL FILTER DEBUG - Capture exact parameters going to service
 			// 🎯 RBAC IMPLEMENTATION: Apply staffId filter only for agents
-			if (requesterRole === "agent" && staffId) {
+			if ((requesterRole === "agent" || requesterRole === "offline-agent") && staffId) {
 				filter.staffId = staffId;
 			} else {
 				// Remove any existing staffId filter for admin/designer
@@ -1127,9 +1098,11 @@ class OrderController {
 							? "Agent sees only own orders"
 							: requesterRole === "designer"
 								? "Designer sees all orders (for design work)"
+								: requesterRole === "offline-agent"
+								? "Offline-agent sees only own orders"
 								: "Admin sees all orders",
 					hasStaffIdFilter:
-						requesterRole === "agent" && Boolean(staffId),
+							(requesterRole === "agent" || requesterRole === "offline-agent") && Boolean(staffId),
 					timestamp: new Date().toISOString(),
 				},
 			});

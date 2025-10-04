@@ -1,3 +1,4 @@
+import { Op, Sequelize } from "sequelize";
 import Payment from "../model/payment.model";
 import Order from "../model/order.model";
 import Staff from "../model/staff.model";
@@ -90,5 +91,107 @@ export default class EarningService {
       if (r) results.push(r);
     }
     return results;
+  }
+
+  // === Designer distribution earnings ===
+  // For each month: totalOrders (status != 'order-canceled') are equally divided by number of active designers that month.
+  // Each designer's earning for that month = (totalOrders / activeDesigners) * designCharge.
+  // Designers active for a month are those with role='designer', isDeleted=false, and createdAt <= end of that month.
+  async getDesignerMonthlyDistributionForAll() {
+    // Fetch all designers (active only for now; isDeleted=false). We'll still consider createdAt for month eligibility.
+    const allDesigners = await Staff.findAll({ where: { role: "designer", isDeleted: false } });
+    if (!allDesigners.length) return [];
+
+    // Determine the earliest join date among designers
+    let earliest = new Date();
+    for (const d of allDesigners) {
+      const joined = d.createdAt ? new Date(d.createdAt) : new Date();
+      if (joined < earliest) earliest = joined;
+    }
+    const now = new Date();
+    const months = monthRange(new Date(earliest.getFullYear(), earliest.getMonth(), 1), now);
+
+    // Fetch total orders grouped by month across all time (we will map to month range)
+    const orderRows = await Order.findAll({
+      attributes: [
+        [Sequelize.fn("DATE_FORMAT", Sequelize.col("createdAt"), "%Y-%m"), "month"],
+        [Sequelize.fn("COUNT", Sequelize.col("orderId")), "count"],
+      ],
+      where: { status: { [Op.not]: "order-canceled" } },
+      group: ["month"],
+      order: [["month", "ASC"]],
+      raw: true,
+    });
+    const orderCountMap = new Map<string, number>();
+    for (const r of orderRows as any[]) {
+      orderCountMap.set(r.month, parseInt(String(r.count), 10) || 0);
+    }
+
+    // Precompute active designer count per month
+    const designersData = allDesigners.map((d) => ({
+      staffId: d.staffId,
+      name: d.name,
+      designCharge: d.designCharge || 0,
+      joinedAt: d.createdAt ? new Date(d.createdAt) : now,
+      role: d.role,
+    }));
+
+    const activeDesignerCountMap = new Map<string, number>();
+    for (const m of months) {
+      const [y, mm] = m.split("-").map((x) => parseInt(x, 10));
+      const endOfMonth = new Date(y, mm, 0, 23, 59, 59, 999); // last day of month
+      let active = 0;
+      for (const d of designersData) {
+        if (d.joinedAt <= endOfMonth) active += 1;
+      }
+      activeDesignerCountMap.set(m, active);
+    }
+
+    // Build per-designer histories
+    const results: any[] = [];
+    for (const d of designersData) {
+      const dMonths = months.filter((m) => {
+        // Include months from join month to now
+        const [y, mm] = m.split("-").map((x) => parseInt(x, 10));
+        const startOfThisMonth = new Date(y, mm - 1, 1);
+        return startOfThisMonth >= new Date(d.joinedAt.getFullYear(), d.joinedAt.getMonth(), 1);
+      });
+
+      const history = dMonths.map((m) => {
+        const totalOrders = orderCountMap.get(m) || 0;
+        const activeCount = activeDesignerCountMap.get(m) || 0;
+        const distributed = activeCount > 0 ? totalOrders / activeCount : 0;
+        const earning = distributed * (d.designCharge || 0);
+        return {
+          month: m,
+          totalOrders,
+          activeDesigners: activeCount,
+          distributedOrdersPerDesigner: Number(distributed.toFixed(4)),
+          earning: Number(earning.toFixed(2)),
+        };
+      });
+
+      const ongoingMonth = history.length ? history[history.length - 1].earning : 0;
+      const allTimeTotal = Number(history.reduce((acc, r) => acc + r.earning, 0).toFixed(2));
+
+      results.push({
+        staff: {
+          staffId: d.staffId,
+          name: d.name,
+          role: d.role,
+          designCharge: d.designCharge,
+          joinedAt: d.joinedAt,
+        },
+        ongoingMonth,
+        allTimeTotal,
+        history,
+      });
+    }
+    return results;
+  }
+
+  async getDesignerMonthlyDistributionForStaff(staffId: number) {
+    const all = await this.getDesignerMonthlyDistributionForAll();
+    return all.find((x: any) => x.staff.staffId === staffId) || null;
   }
 }

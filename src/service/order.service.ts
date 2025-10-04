@@ -124,6 +124,7 @@ class OrderService {
 			// To enable fair auto-assign when staffId is missing, flip the flag below.
 			const ENABLE_FAIR_AUTO_ASSIGN = true; // fair auto-assign enabled
 			if (ENABLE_FAIR_AUTO_ASSIGN && staffId == null) {
+				// Exclude designers and offline-agents by selecting role 'agent' only
 				const fair = await this.staffService.getFairRandomStaff({ preferOnline: true, role: "agent" });
 				if (fair) newOrder.staffId = fair.staffId as any;
 			}
@@ -260,6 +261,7 @@ class OrderService {
 			// To enable fair auto-assign when staffId is missing, flip the flag below.
 			const ENABLE_FAIR_AUTO_ASSIGN = true; // fair auto-assign enabled
 			if (ENABLE_FAIR_AUTO_ASSIGN && staffId == null) {
+				// Exclude designers and offline-agents by selecting role 'agent' only
 				const fair = await this.staffService.getFairRandomStaff({ preferOnline: true, role: "agent" });
 				if (fair) newOrder.staffId = fair.staffId as any;
 			}
@@ -868,7 +870,7 @@ class OrderService {
 				};
 				finalFilter = restFilter;
 			} else {
-				// For agents, keep the filter as is (including staffId if present)
+				// For agents/offline-agents, keep the filter as is (including staffId if present)
 				finalFilter = { ...filter };
 			}
 

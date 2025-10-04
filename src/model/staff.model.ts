@@ -16,7 +16,7 @@ export interface StaffAttributes {
 	email: string;
 	phone: string;
 	password: string;
-	role: "agent" | "designer";
+	role: "agent" | "designer" | "offline-agent";
 	commissionPercentage: number;
 	designCharge: number | null;
 	balance: number;
@@ -34,7 +34,7 @@ export interface StaffCreationAttributes {
 	email: string;
 	phone: string;
 	password: string;
-	role: "agent" | "designer";
+	role: "agent" | "designer" | "offline-agent";
 	commissionPercentage: number;
 	designCharge: number | null;
 	balance: number;
@@ -79,11 +79,11 @@ export default class Staff extends Model<
 	declare password: string;
 
 	@Column({
-		type: DataType.ENUM("agent", "designer"), // Define ENUM values
+		type: DataType.ENUM("agent", "designer", "offline-agent"), // Define ENUM values
 		defaultValue: "agent",
 		allowNull: false,
 	})
-	declare role: "agent" | "designer";
+	declare role: "agent" | "designer" | "offline-agent";
 
 	@Column({
 		type: DataType.INTEGER,

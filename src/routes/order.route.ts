@@ -17,7 +17,7 @@ orderRouter.get(
 	"/",
 	// Documentation: Authenticate allows 'admin', 'agent', and 'designer' roles to view all orders.
 	// The `req.staff` or `req.admin` object will contain the role, which is then used for specific filtering.
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	orderMiddleware.validateFilteringQueries,
 	orderController.getAllOrders,
 );
@@ -32,7 +32,7 @@ orderRouter.get(
 // 🔍 TEMPORARY DEBUG ENDPOINT - Remove after debugging
 orderRouter.get(
 	"/debug-info",
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	(req: Request, res: Response) => {
 		const debugInfo = {
 			timestamp: new Date().toISOString(),
@@ -68,7 +68,7 @@ orderRouter.post(
 	"/create",
 	strictLimiter,
 	// Documentation: Allow 'designer' role to create orders, in addition to 'admin' and 'agent'.
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	orderImageUploader.uploader("order-images").array("designFiles", 5),
 	orderImageUploader.compressImages,
 	orderMiddleware.validateOrderCreation,
@@ -79,7 +79,7 @@ orderRouter.post(
 	"/create-request",
 	strictLimiter,
 	// Documentation: Allow 'designer' role to create order requests, in addition to 'admin' and 'agent'.
-	authMiddleware.authenticate(["admin", "agent", "designer", "customer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent", "customer"]),
 	orderImageUploader.uploader("order-images").array("designFiles", 5),
 	orderImageUploader.compressImages,
 	orderMiddleware.validateOrderRequestCreation,
@@ -90,7 +90,7 @@ orderRouter.put(
 	"/update-order",
 	strictLimiter,
 	// Documentation: Allow 'designer' and 'agent' roles to update orders (one-time logic is in controller/service).
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	orderMiddleware.validateOrderUpdate,
 	orderController.updateOrder,
 );
@@ -109,20 +109,24 @@ orderRouter.post(
 		});
 		next();
 	},
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	orderMiddleware.validateOrderPaymentCreation,
 	orderController.createOrderPayment,
 );
 
-// Accept both POST (gateway callback) and GET (fallback/manual open) for payment redirects
-orderRouter.post("/payment/success", strictLimiter, orderController.paymentSuccess);
-orderRouter.get("/payment/success", strictLimiter, orderController.paymentSuccess);
+orderRouter.post(
+	"/payment/success",
+	strictLimiter,
+	orderController.paymentSuccess,
+);
 
 orderRouter.post("/payment/fail", strictLimiter, orderController.paymentFail);
-orderRouter.get("/payment/fail", strictLimiter, orderController.paymentFail);
 
-orderRouter.post("/payment/cancel", strictLimiter, orderController.paymentCancel);
-orderRouter.get("/payment/cancel", strictLimiter, orderController.paymentCancel);
+orderRouter.post(
+	"/payment/cancel",
+	strictLimiter,
+	orderController.paymentCancel,
+);
 
 orderRouter.delete(
 	"/:orderId",

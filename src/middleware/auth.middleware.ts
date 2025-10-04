@@ -51,7 +51,7 @@ class AuthMiddleware {
 	}
 
 	authenticate = (
-		roles: Array<"customer" | "admin" | "agent" | "designer">, // Documentation: The roles that can be authenticated
+		roles: Array<"customer" | "admin" | "agent" | "designer" | "offline-agent">, // Documentation: The roles that can be authenticated
 	) => {
 		return async (req: Request, res: Response, next: NextFunction) => {
 			try {
@@ -149,7 +149,7 @@ class AuthMiddleware {
 								};
 								break;
 							}
-						} else if (role === "agent" || role === "designer") {
+						} else if (role === "agent" || role === "designer" || role === "offline-agent") {
 							user = await this.staffService.getStaffByEmailAndRole(
 								decodedToken.email,
 								role,

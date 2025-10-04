@@ -9,7 +9,7 @@ class StaffService {
 		email: string,
 		phone: string,
 		password: string,
-		role: "agent" | "designer",
+		role: "agent" | "designer" | "offline-agent",
 		commissionPercentage: number,
 		designCharge?: number,
 	): Promise<Staff | StaffAttributes | null> => {
@@ -134,7 +134,7 @@ class StaffService {
 
 	getStaffByEmailAndRole = async (
 		email: string,
-		role: "agent" | "designer",
+		role: "agent" | "designer" | "offline-agent",
 	): Promise<Staff | StaffAttributes | null> => {
 		try {
 			const staff = await Staff.findOne({ where: { email, role } });
@@ -150,7 +150,7 @@ class StaffService {
 
 	getRandomStaff = async (): Promise<Staff | StaffAttributes | null> => {
 		try {
-			// Fetch all online agents first (exclude designers)
+			// Fetch all online agents first (exclude designers and offline-agents)
 			const activeStaff = await Staff.findAll({
 				where: { status: "online", role: "agent" },
 			});
@@ -163,7 +163,7 @@ class StaffService {
 				return activeStaff[randomIndex].toJSON();
 			}
 
-			// If no active agents, fetch all agents (exclude designers)
+			// If no active agents, fetch all agents (still exclude designers and offline-agents)
 			const allStaff = await Staff.findAll({ where: { role: "agent" } });
 
 			// If no staff exist at all, return null
@@ -184,7 +184,7 @@ class StaffService {
 	getFairRandomStaff = async (
 		options?: {
 			preferOnline?: boolean; // default true
-			role?: "agent" | "designer"; // default 'agent'
+			role?: "agent" | "designer" | "offline-agent"; // default 'agent'
 		},
 	): Promise<Staff | StaffAttributes | null> => {
 		try {

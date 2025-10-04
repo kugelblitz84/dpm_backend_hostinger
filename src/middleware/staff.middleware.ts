@@ -45,12 +45,12 @@ class StaffMiddleware {
 			role: Joi.string()
 				.trim()
 				.required()
-				.valid("agent", "designer")
+				.valid("agent", "designer", "offline-agent")
 				.messages({
 					"string.base": "role must be a string.",
 					"string.empty": "role is required.",
 					"string.valid":
-						"invalid role. role must be 'agent' or 'designer'.",
+						"invalid role. role must be 'agent', 'designer' or 'offline-agent'.",
 					"any.required": "role is required.",
 				}),
 			commissionPercentage: Joi.number().optional().default(1).messages({
@@ -269,12 +269,12 @@ class StaffMiddleware {
 				role: Joi.string()
 					.trim()
 					.optional()
-					.valid("agent", "designer")
+					.valid("agent", "designer", "offline-agent")
 					.messages({
 						"string.base": "role must be a string.",
 						"string.empty": "role is required.",
 						"string.valid":
-							"Invalid role. role must be 'agent' or 'designer'.",
+							"Invalid role. role must be 'agent', 'designer' or 'offline-agent'.",
 					}),
 				page: Joi.number().optional().default(1).messages({
 					"number.base": "page must be a integer.",

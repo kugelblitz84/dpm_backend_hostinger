@@ -17,15 +17,24 @@ class EarningController {
       const admin = (req as any).admin;
       const staff = (req as any).staff;
 
+      // Optional query switch: ?mode=designer-distribution to use the designer order distribution logic
+      const mode = (req.query.mode as string) || "commission";
+
       if (admin?.role === "admin") {
-        const data = await this.earningService.getMonthlyEarningsForAllStaff();
+        const data =
+          mode === "designer-distribution"
+            ? await this.earningService.getDesignerMonthlyDistributionForAll()
+            : await this.earningService.getMonthlyEarningsForAllStaff();
         return responseSender(res, 200, "Monthly earnings fetched successfully.", { role: "admin", data });
       }
 
       if (staff?.staffId) {
-        const data = await this.earningService.getMonthlyEarningsForStaff(staff.staffId);
+        const data =
+          mode === "designer-distribution"
+            ? await this.earningService.getDesignerMonthlyDistributionForStaff(staff.staffId)
+            : await this.earningService.getMonthlyEarningsForStaff(staff.staffId);
         if (!data) return responseSender(res, 404, "Staff not found.");
-        return responseSender(res, 200, "Monthly earnings fetched successfully.", { role: staff.role, data });
+        return responseSender(res, 200, "Monthly earnings fetched successfully.", { role: staff.role, data, mode });
       }
 
       return responseSender(res, 401, "Unauthorized.");

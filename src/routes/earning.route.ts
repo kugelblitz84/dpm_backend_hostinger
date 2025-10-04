@@ -12,7 +12,7 @@ const auth = new AuthMiddleware();
 router.get(
   "/monthly",
   strictLimiter,
-  auth.authenticate(["admin", "agent", "designer"]),
+  auth.authenticate(["admin", "agent", "designer", "offline-agent"]),
   controller.getMonthlyEarnings,
 );
 
