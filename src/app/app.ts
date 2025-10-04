@@ -30,6 +30,7 @@ import clientRouter from "../routes/client.route";
 import cartRouter from "../routes/cart.route";
 import courierRouter from "../routes/courier.route";
 import transactionRouter from "../routes/transaction.route";
+import earningRouter from "../routes/earning.route";
 import apiKeyMiddleware from "../middleware/apikey.middleware"; // Keep this import
 import dashboardRouter from "../routes/dashboard.route";
 
@@ -148,6 +149,9 @@ app.use(`${serverUrlPrefix}/courier`, courierRouter);
 
 // transaction routes
 app.use(`${serverUrlPrefix}/transaction`, transactionRouter);
+
+// earning routes
+app.use(`${serverUrlPrefix}/earning`, earningRouter);
 
 // 404 middleware
 app.use(notFoundController);
