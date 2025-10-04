@@ -15,8 +15,10 @@ export const nodeEnv: string = process.env.NODE_ENV || "development";
 // For development, use localhost and HTTP. For production, use the specified domain and HTTPS.
 export const serverBaseUrl: string =
 	nodeEnv === "production"
-		? urlJoin(`${process.env.SERVER_BASE_URL}:${process.env.PORT}`)
-		: `http://localhost:${process.env.PORT}`; // Changed to http://localhost for dev
+		// In production, use the public origin as-is (no internal port appended)
+		? (process.env.SERVER_BASE_URL || "")
+		// In development, keep localhost with port
+		: `http://localhost:${process.env.PORT}`;
 
 export const apiKey: string = process.env.API_KEY || "";
 export const serverUrlPrefix: string = process.env.SERVER_URL_PREFIX || "";
