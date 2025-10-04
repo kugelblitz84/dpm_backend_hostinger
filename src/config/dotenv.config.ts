@@ -97,8 +97,8 @@ export const sslCommerzSandbox: string = (process.env.SSL_COMMERZ_SANDBOX || "tr
 
 // Callback URLs (can be overridden via env, otherwise default to backend routes)
 export const sslCommerzSuccessUrl: string =
-	process.env.SSL_COMMERZ_SUCCESS_URL || urlJoin(serverBaseUrl, "/success-payment");
+	process.env.SSL_COMMERZ_SUCCESS_URL || urlJoin(serverBaseUrl, "/api/order/payment/success");
 export const sslCommerzFailUrl: string =
-	process.env.SSL_COMMERZ_FAIL_URL || urlJoin(serverBaseUrl, "/failed-payment");
+	process.env.SSL_COMMERZ_FAIL_URL || urlJoin(serverBaseUrl, "/api/order/payment/fail");
 export const sslCommerzCancelUrl: string =
-	process.env.SSL_COMMERZ_CANCEL_URL || urlJoin(serverBaseUrl, "/failed-payment");
+	process.env.SSL_COMMERZ_CANCEL_URL || urlJoin(serverBaseUrl, "/api/order/payment/cancel");
