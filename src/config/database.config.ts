@@ -36,6 +36,23 @@ export const initializeDatabase = async () => {
 		console.log("Database connection established successfully.");
 		// Sync models after database creation
 		await sequelize.sync({ alter: true });
+		// Ensure Staff.role ENUM includes 'offline-agent' (MySQL enum alterations may not be handled by sync)
+		try {
+			const [rows]: any = await sequelize.query("SHOW COLUMNS FROM `Staff` LIKE 'role';");
+			const typeStr: string | undefined = rows?.[0]?.Type;
+			if (typeStr && typeStr.toLowerCase().startsWith("enum(")) {
+				const hasOfflineAgent = typeStr.includes("'offline-agent'");
+				if (!hasOfflineAgent) {
+					console.log("Patching Staff.role ENUM to include 'offline-agent'...");
+					await sequelize.query(
+						"ALTER TABLE `Staff` MODIFY `role` ENUM('agent','designer','offline-agent') NOT NULL DEFAULT 'agent';",
+					);
+					console.log("Staff.role ENUM patched successfully.");
+				}
+			}
+		} catch (enumErr: any) {
+			console.warn("Warning: failed to verify/patch Staff.role ENUM:", enumErr?.message || enumErr);
+		}
 		
 	} catch (err: any) {
 		console.error("Database connection failed:", err?.message || err);

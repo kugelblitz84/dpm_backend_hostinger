@@ -315,7 +315,7 @@ class StaffService {
 		name: string,
 		email: string,
 		phone: string,
-		role: "agent" | "designer",
+		role: "agent" | "designer" | "offline-agent",
 		commissionPercentage: number,
 		designCharge?: number,
 	): Promise<boolean> => {
