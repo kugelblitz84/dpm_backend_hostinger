@@ -202,6 +202,7 @@ class OrderService {
 		customerId: number | null,
 		customerName: string,
 		customerPhone: string,
+		customerEmail: string | null,
 		staffId: number | null,
 		billingAddress: string,
 		additionalNotes: string,
@@ -225,6 +226,7 @@ class OrderService {
 				customerId,
 				customerName,
 				customerPhone,
+				customerEmail,
 				billingAddress,
 				additionalNotes,
 				staffId,
@@ -240,17 +242,7 @@ class OrderService {
 				currentStatus: "",
 			};
 
-			if (customerId) {
-				const customer =
-					await this.customerService.getCustomerById(customerId);
-
-				if (customer) {
-					newOrder.customerId = customer.customerId;
-					(newOrder as any).customerEmail = customer.email;
-				} else {
-					newOrder.customerId = null;
-				}
-			}
+			// Do not force-fetch customer email; accept the provided email from the request.
 
 			if (!courierId || !courierAddress) {
 				newOrder.courierId = null;

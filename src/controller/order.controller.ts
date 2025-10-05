@@ -240,6 +240,7 @@ class OrderController {
 				customerId: (req as any).validatedValue.customerId,
 				customerName: (req as any).validatedValue.customerName,
 				customerPhone: (req as any).validatedValue.customerPhone,
+				customerEmail: (req as any).validatedValue.customerEmail,
 				// Documentation: Use staffId from the validated value if provided, otherwise default to null.
 				// This allows for explicit staff assignment or an unassigned order initially.
 				staffId: (req as any).validatedValue.staffId ?? null,
@@ -268,19 +269,7 @@ class OrderController {
 				(newOrder as any).images = req.files;
 			}
 
-			if (
-				(req as any).validatedValue.courierId &&
-				!(req as any).validatedValue.courierAddress
-			) {
-				console.warn("[OrderController.createOrderRequest] 400: courierId provided but courierAddress missing");
-				return responseSender(res, 400, "Courier address is required");
-			} else if (
-				!(req as any).validatedValue.courierId &&
-				(req as any).validatedValue.courierAddress
-			) {
-				console.warn("[OrderController.createOrderRequest] 400: courierAddress provided but courierId missing");
-				return responseSender(res, 400, "Courier id is required");
-			}
+			// Remove strict cross-field checks for courier fields to align with frontend contract.
 
 			if ((req as any).validatedValue.couponId) {
 				(newOrder as any).couponId = (
@@ -295,21 +284,13 @@ class OrderController {
 				(newOrder as any).courierAddress = (req as any).validatedValue.courierAddress;
 			}
 
-			// Documentation: Fetch customer by ID if customerId is provided.
-			if (newOrder.customerId) {
-				const customer = await this.customerService.getCustomerById(
-					newOrder.customerId,
-				);
-				if (customer) {
-					// Update newOrder with customer details if found
-					// (newOrder as any).customerEmail = customer.email; // Assuming customerEmail is part of newOrder
-				}
-			}
+			// No additional customer lookups required here; the email comes from the request.
 
 			const createdOrder = await this.orderService.createOrderRequest(
 				newOrder.customerId,
 				newOrder.customerName,
 				newOrder.customerPhone,
+				(newOrder as any).customerEmail,
 				newOrder.staffId,
 				newOrder.billingAddress,
 				newOrder.additionalNotes,
