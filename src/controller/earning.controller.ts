@@ -29,12 +29,37 @@ class EarningController {
       }
 
       if (staff?.staffId) {
-        const data =
-          mode === "designer-distribution"
-            ? await this.earningService.getDesignerMonthlyDistributionForStaff(staff.staffId)
-            : await this.earningService.getMonthlyEarningsForStaff(staff.staffId);
-        if (!data) return responseSender(res, 404, "Staff not found.");
-        return responseSender(res, 200, "Monthly earnings fetched successfully.", { role: staff.role, data, mode });
+        if (mode === "designer-distribution") {
+          // Designer distribution only applies to designers. For non-designers or brand-new staff,
+          // the service may return null. In that case, return a zero/empty dataset instead of 404
+          // to keep frontend flows simple for newly created staff.
+          const data = await this.earningService.getDesignerMonthlyDistributionForStaff(staff.staffId);
+          if (!data) {
+            const fallback = {
+              staff: {
+                staffId: staff.staffId,
+                name: staff.name,
+                role: staff.role,
+                designCharge: staff.designCharge ?? null,
+                joinedAt: staff.createdAt ?? null,
+              },
+              ongoingMonth: 0,
+              allTimeTotal: 0,
+              history: [] as Array<unknown>,
+            };
+            return responseSender(res, 200, "Monthly earnings fetched successfully.", {
+              role: staff.role,
+              data: fallback,
+              mode,
+              note: "No designer distribution available for this staff. Returning empty dataset.",
+            });
+          }
+          return responseSender(res, 200, "Monthly earnings fetched successfully.", { role: staff.role, data, mode });
+        } else {
+          const data = await this.earningService.getMonthlyEarningsForStaff(staff.staffId);
+          if (!data) return responseSender(res, 404, "Staff not found.");
+          return responseSender(res, 200, "Monthly earnings fetched successfully.", { role: staff.role, data, mode });
+        }
       }
 
       return responseSender(res, 401, "Unauthorized.");
