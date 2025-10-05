@@ -60,13 +60,16 @@ class StaffService {
 		email: string,
 	): Promise<Staff | StaffAttributes | null> => {
 		try {
-			const staff = await Staff.findOne({ where: { email } });
+			// Ignore soft-deleted rows and pick the latest deterministically
+			const staff = await Staff.findOne({
+				where: { email, isDeleted: false } as any,
+				order: [["createdAt", "DESC"]],
+			});
 			if (staff) {
 				return staff.toJSON();
 			}
 			return null;
 		} catch (err: any) {
-			
 			throw err;
 		}
 	};
@@ -137,13 +140,16 @@ class StaffService {
 		role: "agent" | "designer" | "offline-agent",
 	): Promise<Staff | StaffAttributes | null> => {
 		try {
-			const staff = await Staff.findOne({ where: { email, role } });
+			// Ignore soft-deleted rows and pick the latest deterministically
+			const staff = await Staff.findOne({
+				where: { email, role, isDeleted: false } as any,
+				order: [["createdAt", "DESC"]],
+			});
 			if (staff) {
 				return staff.toJSON();
 			}
 			return null;
 		} catch (err: any) {
-			
 			throw err;
 		}
 	};
@@ -152,7 +158,7 @@ class StaffService {
 		try {
 			// Fetch all online agents first (exclude designers and offline-agents)
 			const activeStaff = await Staff.findAll({
-				where: { status: "online", role: "agent" },
+				where: { status: "online", role: "agent", isDeleted: false } as any,
 			});
 
 			// If active staff exist, pick a random one
@@ -164,7 +170,7 @@ class StaffService {
 			}
 
 			// If no active agents, fetch all agents (still exclude designers and offline-agents)
-			const allStaff = await Staff.findAll({ where: { role: "agent" } });
+			const allStaff = await Staff.findAll({ where: { role: "agent", isDeleted: false } as any });
 
 			// If no staff exist at all, return null
 			if (!allStaff.length) {
@@ -194,11 +200,11 @@ class StaffService {
 			// Step 1: Gather candidate staff (online preferred, else any), filtered by role
 			let candidates = await Staff.findAll({
 				where: preferOnline
-					? { status: "online", role }
-					: ({ role } as any),
+					? ({ status: "online", role, isDeleted: false } as any)
+					: ({ role, isDeleted: false } as any),
 			});
 			if (!candidates.length && preferOnline) {
-				candidates = await Staff.findAll({ where: { role } });
+				candidates = await Staff.findAll({ where: { role, isDeleted: false } as any });
 			}
 			if (!candidates.length) return null;
 
@@ -404,19 +410,21 @@ class StaffService {
 
 	deleteStaff = async (staffId: number) => {
 		try {
-			const staff = await Staff.findOne({
-				where: { staffId },
-			});
-
+			const staff = await Staff.findOne({ where: { staffId } });
 			if (!staff) {
 				return false;
 			}
 
-			await Staff.update({ isDeleted: true }, { where: { staffId } });
+			// Safety check: prevent hard delete if there are existing orders referencing this staff
+			const orderCount = await Order.count({ where: { staffId } });
+			if (orderCount > 0) {
+				// Cannot delete due to FK relationships; let controller handle response
+				return false;
+			}
 
-			return true;
+			const deleted = await Staff.destroy({ where: { staffId } });
+			return deleted > 0;
 		} catch (err: any) {
-			
 			throw err;
 		}
 	};

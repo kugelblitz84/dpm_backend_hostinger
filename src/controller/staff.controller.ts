@@ -405,7 +405,7 @@ class StaffController {
 			);
 			const offset = (currentPage - 1) * limitPerPage;
 			const order: Order = [["createdAt", "DESC"]];
-			const filter: WhereOptions<StaffAttributes> = {};
+			const filter: any = { isDeleted: false };
 
 			if (role) {
 				filter.role = role;
