@@ -5,6 +5,7 @@ import { strictLimiter } from "../middleware/rateLimiter.middleware";
 import OrderMiddleware from "../middleware/order.middleware";
 import ImageUploaderMiddleware from "../middleware/imageUploader.middleware";
 import AuthMiddleware from "../middleware/auth.middleware";
+import { or } from "sequelize";
 
 const orderMiddleware = new OrderMiddleware();
 const authMiddleware = new AuthMiddleware();
@@ -119,15 +120,23 @@ orderRouter.post(
 	strictLimiter,
 	orderController.paymentSuccess,
 );
+orderRouter.get(
+	"/payment/success",strictLimiter,
+	orderController.paymentSuccess,
+);
 
 orderRouter.post("/payment/fail", strictLimiter, orderController.paymentFail);
-
+orderRouter.get("/payment/fail", strictLimiter, orderController.paymentFail);
 orderRouter.post(
 	"/payment/cancel",
 	strictLimiter,
 	orderController.paymentCancel,
 );
-
+orderRouter.get(
+	"/payment/cancel",
+	strictLimiter,
+	orderController.paymentCancel,
+);
 orderRouter.delete(
 	"/:orderId",
 	// Documentation: Order deletion is restricted to 'admin' roles only.
