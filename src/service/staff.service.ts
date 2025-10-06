@@ -408,7 +408,7 @@ class StaffService {
 		}
 	};
 
-	deleteStaff = async (staffId: number) => {
+	deleteStaff = async (staffId: number): Promise<{ deleted: boolean; softDeleted: boolean } | false> => {
 		try {
 			const staff = await Staff.findOne({ where: { staffId } });
 			if (!staff) {
@@ -418,12 +418,13 @@ class StaffService {
 			// Safety check: prevent hard delete if there are existing orders referencing this staff
 			const orderCount = await Order.count({ where: { staffId } });
 			if (orderCount > 0) {
-				// Cannot delete due to FK relationships; let controller handle response
-				return false;
+				// Fallback to soft-delete when hard delete is unsafe
+				await Staff.update({ isDeleted: true }, { where: { staffId } });
+				return { deleted: false, softDeleted: true };
 			}
 
 			const deleted = await Staff.destroy({ where: { staffId } });
-			return deleted > 0;
+			return { deleted: deleted > 0, softDeleted: false };
 		} catch (err: any) {
 			throw err;
 		}

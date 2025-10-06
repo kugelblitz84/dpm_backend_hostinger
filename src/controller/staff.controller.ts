@@ -382,12 +382,24 @@ class StaffController {
 		try {
 			const staffId = (req as any).validatedValue.staffId;
 
-			const isDeleted = await this.staffService.deleteStaff(staffId);
-			if (!isDeleted) {
-				return responseSender(res, 500, "Staff deletion failed.");
+			const result = await this.staffService.deleteStaff(staffId);
+			if (!result) {
+				return responseSender(res, 404, "Staff not found.");
 			}
 
-			return responseSender(res, 200, "Staff deleted successfully.");
+			if (result.softDeleted) {
+				return responseSender(
+					res,
+					200,
+					"Staff could not be hard-deleted due to existing orders. Soft-deleted instead.",
+				);
+			}
+
+			if (result.deleted) {
+				return responseSender(res, 200, "Staff deleted successfully.");
+			}
+
+			return responseSender(res, 500, "Staff deletion failed.");
 		} catch (err: any) {
 			
 			next(err);
