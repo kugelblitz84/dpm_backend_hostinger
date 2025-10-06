@@ -12,7 +12,7 @@ const couponRouter = express.Router();
 
 couponRouter.get(
 	"/",
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	couponMiddleware.validateFilteringQueries,
 	couponController.getAllCoupons,
 );

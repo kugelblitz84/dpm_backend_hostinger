@@ -9,7 +9,7 @@ const dashboardRouter = express.Router();
 
 dashboardRouter.get(
 	"/",
-	authMiddleware.authenticate(["admin", "agent", "designer"]),
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent"]),
 	dashboardController.getStats,
 );
 
