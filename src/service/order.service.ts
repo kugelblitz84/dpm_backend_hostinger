@@ -351,6 +351,10 @@ class OrderService {
 								],
 							},
 							{
+								model: UnlistedProduct,
+								as: "unlistedProduct",
+							},
+							{
 								model: ProductVariant,
 								as: "productVariant",
 								attributes: [

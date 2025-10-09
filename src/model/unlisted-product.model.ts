@@ -46,7 +46,7 @@ export default class UnlistedProduct extends Model<
 	declare basePrice: number;
 
 	@Column({ type: DataType.ENUM("flat", "square-feet"), allowNull: false })
-	declare pricingType: number;
+	declare pricingType: "flat" | "square-feet";
 
 	@HasMany(() => OrderItem)
 	declare orderItems: OrderItem[];
