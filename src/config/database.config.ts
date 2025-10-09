@@ -52,6 +52,32 @@ export const initializeDatabase = async () => {
 			console.warn("[DB] Warning: failed to verify/patch Staff.role ENUM:", enumErr?.message || enumErr);
 		}
 
+		// Ensure OrderItems has pricing breakdown columns before syncing models
+		try {
+			const [cols]: any = await sequelize.query("SHOW COLUMNS FROM `OrderItems`;");
+			const existing = new Set<string>((cols || []).map((c: any) => c.Field));
+			const toAdd: string[] = [];
+			if (!existing.has("unitPrice")) {
+				toAdd.push("ADD COLUMN `unitPrice` DECIMAL(10,2) NULL");
+			}
+			if (!existing.has("additionalPrice")) {
+				toAdd.push("ADD COLUMN `additionalPrice` DECIMAL(10,2) NULL DEFAULT 0");
+			}
+			if (!existing.has("discountPercentage")) {
+				toAdd.push("ADD COLUMN `discountPercentage` DECIMAL(5,2) NULL DEFAULT 0");
+			}
+			if (!existing.has("designCharge")) {
+				toAdd.push("ADD COLUMN `designCharge` DECIMAL(10,2) NULL DEFAULT 0");
+			}
+			if (toAdd.length > 0) {
+				console.log("[DB] Patching OrderItems columns:", toAdd.join(", "));
+				await sequelize.query(`ALTER TABLE \`OrderItems\` ${toAdd.join(", ")};`);
+				console.log("[DB] OrderItems columns patched successfully.");
+			}
+		} catch (colErr: any) {
+			console.warn("[DB] Warning: failed to verify/patch OrderItems columns:", colErr?.message || colErr);
+		}
+
 		// Sync models after ensuring schema
 		await sequelize.sync({ alter: true });
 		
