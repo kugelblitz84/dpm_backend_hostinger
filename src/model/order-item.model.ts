@@ -19,6 +19,11 @@ export interface OrderItemAttributes {
 	productId: number | null;
 	unlistedProductId: number | null;
 	productVariantId: number | null;
+	// Pricing breakdown fields
+	unitPrice: number | null; // base price for the product (per item), nullable for legacy data
+	additionalPrice: number | null; // extra from variant or custom add-on
+	discountPercentage: number | null; // percentage [0-100]
+	designCharge: number | null; // per-item design charge
 	quantity: number;
 	size: number | null;
 	widthInch: number | null;
@@ -33,6 +38,10 @@ export interface OrderItemCreationAttributes {
 	productId?: number;
 	unlistedProductId?: number;
 	productVariantId?: number;
+	unitPrice?: number | null;
+	additionalPrice?: number | null;
+	discountPercentage?: number | null;
+	designCharge?: number | null;
 	quantity: number;
 	size: number | null;
 	widthInch: number | null;
@@ -65,6 +74,19 @@ export default class OrderItem extends Model<
 	@ForeignKey(() => ProductVariant)
 	@Column({ type: DataType.INTEGER, allowNull: true })
 	declare productVariantId: number | null;
+
+	// Pricing breakdown fields
+	@Column({ type: DataType.DECIMAL(10, 2), allowNull: true })
+	declare unitPrice: number | null;
+
+	@Column({ type: DataType.DECIMAL(10, 2), allowNull: true, defaultValue: 0 })
+	declare additionalPrice: number | null;
+
+	@Column({ type: DataType.DECIMAL(5, 2), allowNull: true, defaultValue: 0 })
+	declare discountPercentage: number | null;
+
+	@Column({ type: DataType.DECIMAL(10, 2), allowNull: true, defaultValue: 0 })
+	declare designCharge: number | null;
 
 	@Column({ type: DataType.INTEGER, allowNull: false })
 	declare quantity: number;

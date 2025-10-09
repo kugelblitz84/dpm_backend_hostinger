@@ -76,6 +76,11 @@ class OrderService {
 					};
 				}[];
 			};
+			// Pricing breakdown (optional)
+			unitPrice?: number | null;
+			additionalPrice?: number | null;
+			discountPercentage?: number | null;
+			designCharge?: number | null;
 			quantity: number;
 			size: number | null;
 			widthInch: number | null;
@@ -167,6 +172,10 @@ class OrderService {
 							await OrderItem.create({
 								orderId: createdOrder.orderId,
 								unlistedProductId: unlistedProduct.unlistedProductId,
+								unitPrice: (orderItem as any).unitPrice ?? null,
+								additionalPrice: (orderItem as any).additionalPrice ?? null,
+								discountPercentage: (orderItem as any).discountPercentage ?? null,
+								designCharge: (orderItem as any).designCharge ?? null,
 								quantity: orderItem.quantity,
 								size: orderItem.size,
 								widthInch: orderItem.widthInch,
@@ -178,6 +187,10 @@ class OrderService {
 								orderId: createdOrder.orderId,
 								productId: orderItem.productId,
 								productVariantId: orderItem.productVariantId,
+								unitPrice: (orderItem as any).unitPrice ?? null,
+								additionalPrice: (orderItem as any).additionalPrice ?? null,
+								discountPercentage: (orderItem as any).discountPercentage ?? null,
+								designCharge: (orderItem as any).designCharge ?? null,
 								quantity: orderItem.quantity,
 								size: orderItem.size,
 								widthInch: orderItem.widthInch,
@@ -214,6 +227,11 @@ class OrderService {
 		orderItems: {
 			productId: number;
 			productVariantId: number;
+			// Pricing breakdown (optional)
+			unitPrice?: number | null;
+			additionalPrice?: number | null;
+			discountPercentage?: number | null;
+			designCharge?: number | null;
 			quantity: number;
 			size: number | null;
 			widthInch: number | null;
@@ -287,9 +305,19 @@ class OrderService {
 			if (orderItems.length > 0) {
 				await OrderItem.bulkCreate(
 					orderItems.map((orderItem) => ({
-						...orderItem,
 						orderId: createdOrder.orderId,
-					})),
+						productId: orderItem.productId,
+						productVariantId: orderItem.productVariantId,
+						unitPrice: (orderItem as any).unitPrice ?? null,
+						additionalPrice: (orderItem as any).additionalPrice ?? null,
+						discountPercentage: (orderItem as any).discountPercentage ?? null,
+						designCharge: (orderItem as any).designCharge ?? null,
+						quantity: orderItem.quantity,
+						size: orderItem.size,
+						widthInch: orderItem.widthInch,
+						heightInch: orderItem.heightInch,
+						price: orderItem.price,
+					}))
 				);
 			}
 
