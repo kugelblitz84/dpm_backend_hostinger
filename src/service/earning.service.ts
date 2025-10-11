@@ -1,5 +1,4 @@
 import { Op, Sequelize } from "sequelize";
-import Payment from "../model/payment.model";
 import Order from "../model/order.model";
 import Staff from "../model/staff.model";
 
@@ -23,25 +22,18 @@ function monthRange(start: Date, end: Date): string[] {
 }
 
 export default class EarningService {
-  // Compute monthly earnings for a single staff based on paid payments.
-  // Commission model: commission = payment.amount * (staff.commissionPercentage / 100).
-  // Note: Uses the CURRENT commissionPercentage for historical payments, since there is
-  // no snapshot at payment-time in the schema.
+  // Compute monthly earnings for a single staff based on ORDER GRAND TOTAL price.
+  // Commission model: commission = order.orderTotalPrice * (staff.commissionPercentage / 100).
+  // Note: Uses the CURRENT commissionPercentage for historical orders, since there is
+  // no snapshot at order-time in the schema.
   async getMonthlyEarningsForStaff(staffId: number) {
     const staff = await Staff.findByPk(staffId);
     if (!staff) return null;
 
-    // Fetch all paid payments for orders handled by this staff
-    const payments = await Payment.findAll({
-      where: { isPaid: true },
-      include: [
-        {
-          model: Order,
-          required: true,
-          attributes: ["orderId", "staffId"],
-          where: { staffId },
-        },
-      ],
+    // Fetch ALL orders handled by this staff (earn on creation)
+    const orders = await Order.findAll({
+      where: { staffId },
+      attributes: ["orderId", "orderTotalPrice", "createdAt"],
       order: [["createdAt", "ASC"]],
     });
 
@@ -56,9 +48,9 @@ export default class EarningService {
     months.forEach((m) => map.set(m, 0));
 
     const pct = (staff.commissionPercentage || 0) / 100;
-    for (const p of payments as any[]) {
-      const ym = formatMonth(new Date(p.createdAt));
-      const commission = (Number(p.amount) || 0) * pct;
+    for (const o of orders as any[]) {
+      const ym = formatMonth(new Date(o.createdAt));
+      const commission = (Number(o.orderTotalPrice) || 0) * pct;
       map.set(ym, (map.get(ym) || 0) + commission);
     }
 
