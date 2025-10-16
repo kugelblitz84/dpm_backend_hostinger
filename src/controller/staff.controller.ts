@@ -388,15 +388,7 @@ class StaffController {
 			}
 
 			if (result.softDeleted) {
-				return responseSender(
-					res,
-					200,
-					"Staff could not be hard-deleted due to existing orders. Soft-deleted instead.",
-				);
-			}
-
-			if (result.deleted) {
-				return responseSender(res, 200, "Staff deleted successfully.");
+				return responseSender(res, 200, "Staff soft-deleted successfully.");
 			}
 
 			return responseSender(res, 500, "Staff deletion failed.");

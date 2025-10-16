@@ -415,16 +415,9 @@ class StaffService {
 				return false;
 			}
 
-			// Safety check: prevent hard delete if there are existing orders referencing this staff
-			const orderCount = await Order.count({ where: { staffId } });
-			if (orderCount > 0) {
-				// Fallback to soft-delete when hard delete is unsafe
-				await Staff.update({ isDeleted: true }, { where: { staffId } });
-				return { deleted: false, softDeleted: true };
-			}
-
-			const deleted = await Staff.destroy({ where: { staffId } });
-			return { deleted: deleted > 0, softDeleted: false };
+			// Always perform a soft-delete by setting isDeleted flag.
+			await Staff.update({ isDeleted: true }, { where: { staffId } });
+			return { deleted: false, softDeleted: true };
 		} catch (err: any) {
 			throw err;
 		}
