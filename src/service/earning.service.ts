@@ -76,7 +76,8 @@ export default class EarningService {
 
   // Batch for all staff
   async getMonthlyEarningsForAllStaff() {
-    const staffs = await Staff.findAll({ where: { isDeleted: false } });
+    // Include deleted staffs as well so admin can see historical earnings for soft-deleted staff
+    const staffs = await Staff.findAll();
     const results: any[] = [];
     for (const s of staffs) {
       const r = await this.getMonthlyEarningsForStaff(s.staffId);
@@ -90,8 +91,8 @@ export default class EarningService {
   // Each designer's earning for that month = (totalOrders / activeDesigners) * designCharge.
   // Designers active for a month are those with role='designer', isDeleted=false, and createdAt <= end of that month.
   async getDesignerMonthlyDistributionForAll() {
-    // Fetch all designers (active only for now; isDeleted=false). We'll still consider createdAt for month eligibility.
-    const allDesigners = await Staff.findAll({ where: { role: "designer", isDeleted: false } });
+  // Fetch all designers (include deleted designers as well) so distribution can include historical designers
+  const allDesigners = await Staff.findAll({ where: { role: "designer" } });
     if (!allDesigners.length) return [];
 
     // Determine the earliest join date among designers
