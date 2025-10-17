@@ -403,13 +403,15 @@ class StaffController {
 			const searchTerm = (req as any).validatedValue.searchTerm;
 			const searchBy = (req as any).validatedValue.searchBy;
 			const role = (req as any).validatedValue.role;
+			const includeDeleted = (req as any).query.includeDeleted === "true";
 			const currentPage = parseInt((req as any).validatedValue.page || 1);
 			const limitPerPage = parseInt(
 				(req as any).validatedValue.limit || 20,
 			);
 			const offset = (currentPage - 1) * limitPerPage;
 			const order: Order = [["createdAt", "DESC"]];
-			const filter: any = { isDeleted: false };
+			const filter: any = {};
+			if (!includeDeleted) filter.isDeleted = false;
 
 			if (role) {
 				filter.role = role;

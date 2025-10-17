@@ -282,6 +282,10 @@ class StaffMiddleware {
 				limit: Joi.number().optional().default(20).messages({
 					"number.base": "limit must be a integer.",
 				}),
+				includeDeleted: Joi.string().optional().valid("true", "false").messages({
+					"string.base": "includeDeleted must be a string.",
+					"any.only": "includeDeleted must be 'true' or 'false'",
+				}),
 			});
 
 			const validationResult = staffFilteringSchema.validate(req.query);

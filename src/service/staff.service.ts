@@ -191,6 +191,7 @@ class StaffService {
 		options?: {
 			preferOnline?: boolean; // default true
 			role?: "agent" | "designer" | "offline-agent"; // default 'agent'
+			excludeStaffId?: number; // optional staffId to exclude from selection
 		},
 	): Promise<Staff | StaffAttributes | null> => {
 		try {
@@ -198,13 +199,16 @@ class StaffService {
 			const role = options?.role ?? "agent";
 
 			// Step 1: Gather candidate staff (online preferred, else any), filtered by role
-			let candidates = await Staff.findAll({
-				where: preferOnline
-					? ({ status: "online", role, isDeleted: false } as any)
-					: ({ role, isDeleted: false } as any),
-			});
+			let whereClause: any = preferOnline
+				? { status: "online", role, isDeleted: false }
+				: { role, isDeleted: false };
+			if (options?.excludeStaffId) whereClause.staffId = { [Op.ne]: options.excludeStaffId };
+
+			let candidates = await Staff.findAll({ where: whereClause });
 			if (!candidates.length && preferOnline) {
-				candidates = await Staff.findAll({ where: { role, isDeleted: false } as any });
+				let fallbackWhere: any = { role, isDeleted: false };
+				if (options?.excludeStaffId) fallbackWhere.staffId = { [Op.ne]: options.excludeStaffId };
+				candidates = await Staff.findAll({ where: fallbackWhere } as any);
 			}
 			if (!candidates.length) return null;
 
@@ -415,8 +419,38 @@ class StaffService {
 				return false;
 			}
 
-			// Always perform a soft-delete by setting isDeleted flag.
+			// Perform soft-delete and reassign incomplete orders
 			await Staff.update({ isDeleted: true }, { where: { staffId } });
+
+			// Reassign incomplete orders (requested + active) to another staff
+			const incompleteStatuses = [
+				"order-request-received",
+				"consultation-in-progress",
+				"awaiting-advance-payment",
+				"advance-payment-received",
+				"design-in-progress",
+				"awaiting-design-approval",
+				"production-started",
+				"production-in-progress",
+				"ready-for-delivery",
+				"out-for-delivery",
+			];
+
+			const ordersToReassign = await Order.findAll({ where: { staffId, status: { [Op.in]: incompleteStatuses } } });
+			if (ordersToReassign.length > 0) {
+				for (const ord of ordersToReassign) {
+					// Select a new staff excluding the deleted one
+					const replacement = await this.getFairRandomStaff({ preferOnline: true, role: "agent", excludeStaffId: staffId });
+					if (!replacement) {
+						// If no replacement agent available, skip reassignment for now
+						continue;
+					}
+					await Order.update({ staffId: replacement.staffId }, { where: { orderId: ord.orderId } });
+					// Earnings: since earnings are computed from orderTotalPrice per staff, moving the staffId
+					// effectively transfers future earnings to the replacement. No immediate balance mutation needed.
+				}
+			}
+
 			return { deleted: false, softDeleted: true };
 		} catch (err: any) {
 			throw err;
