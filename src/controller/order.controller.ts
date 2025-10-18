@@ -14,6 +14,7 @@ import TransactionService from "../service/transaction.service";
 import { frontendLandingPageUrl } from "../config/dotenv.config";
 import StaffService from "../service/staff.service";
 import CustomerService from "../service/customer.service"; // Documentation: Re-added working CustomerService import
+import EmailService from "../service/email.service";
 
 class OrderController {
 	private orderService: OrderService;
@@ -22,7 +23,7 @@ class OrderController {
 	private cartService: CartService;
 	private staffService: StaffService;
 	private customerService: CustomerService; // Documentation: Declared customerService property
-
+	private emailService: EmailService;
 	constructor() {
 		this.orderService = new OrderService();
 		this.paymentService = new PaymentService();
@@ -30,6 +31,7 @@ class OrderController {
 		this.cartService = new CartService();
 		this.staffService = new StaffService();
 		this.customerService = new CustomerService(); // Documentation: Initialized customerService
+		this.emailService = new EmailService();
 	}
 
 	createOrder = async (req: Request, res: Response, next: NextFunction) => {
@@ -353,6 +355,7 @@ class OrderController {
 
 	updateOrder = async (req: Request, res: Response, next: NextFunction) => {
 		try {
+			const email = (req as any).validatedValue.email;
 			console.log('[OrderController.updateOrder] ENTER', {
 				path: req.path,
 				method: req.method,
@@ -475,7 +478,33 @@ class OrderController {
 					console.log('[OrderController.updateOrder] commission crediting is currently disabled (skipped)');
 				}
 			}
+												try {
+													// OrderService.updateOrder returns boolean. Retrieve the order to get fresh data.
+													const afterUpdate = await this.orderService.getOrderById(newOrder.orderId as any);
 
+													const orderIdForEmail = afterUpdate?.orderId ?? newOrder.orderId;
+													const statusForEmail = afterUpdate?.status ?? newOrder.status;
+													const customerNameForEmail = fetchedOrder.customerName || fetchedOrder.customerEmail || '';
+
+													const orderUrl = frontendLandingPageUrl
+														? `${frontendLandingPageUrl}/orders/${orderIdForEmail}`
+														: undefined;
+
+													await this.emailService.sendEmail(
+														email,
+														`Order status updated`,
+														"order-update-notification",
+														{
+															customerName: customerNameForEmail,
+															orderId: orderIdForEmail,
+															status: statusForEmail,
+															orderUrl,
+														},
+													);
+												} catch (mailErr) {
+													// don't fail the request if email sending fails; log for operators
+													console.error('[OrderController.updateOrder] failed to send order update email', mailErr);
+												}
 			return responseSender(res, 200, "Order updated successfully.");
 		} catch (err: any) {
 			console.error('[OrderController.updateOrder] ERROR:', err);
