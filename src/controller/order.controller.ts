@@ -568,18 +568,24 @@ class OrderController {
 					? `${frontendLandingPageUrl}/orders/${orderIdForEmail}`
 					: undefined;
 
-				await this.emailService.sendEmail(
-					email,
-					`Order status updated`,
-					"order-update-notification",
-					{
-						customerName: customerNameForEmail,
-						orderId: orderIdForEmail,
-						status: statusForEmail,
-						orderUrl,
-					},
-				);
-				console.log("[OrderController.updateOrder] email sent successfully to ", email);
+				const recipientEmail =
+					email || afterUpdate?.customerEmail || fetchedOrder?.customerEmail;
+				if (recipientEmail) {
+					await this.emailService.sendEmail(
+						recipientEmail,
+						`Order #${orderIdForEmail} status updated`,
+						"order-update-notification",
+						{
+							customerName: customerNameForEmail,
+							orderId: orderIdForEmail,
+							status: statusForEmail,
+							orderUrl,
+						},
+					);
+					console.log("[OrderController.updateOrder] email sent successfully to ", recipientEmail);
+				} else {
+					console.warn('[OrderController.updateOrder] no recipient email available; skipping order update email', { orderId: orderIdForEmail });
+				}
 			} catch (mailErr) {
 				// don't fail the request if email sending fails; log for operators
 				console.error(
