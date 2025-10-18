@@ -37,8 +37,14 @@ class OrderController {
 	createOrder = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			// Debug: log incoming request staffId and validated payload
-			console.log("[OrderController.createOrder] incoming validated staffId:", (req as any).validatedValue?.staffId);
-			console.log("[OrderController.createOrder] validated payload:", (req as any).validatedValue);
+			console.log(
+				"[OrderController.createOrder] incoming validated staffId:",
+				(req as any).validatedValue?.staffId,
+			);
+			console.log(
+				"[OrderController.createOrder] validated payload:",
+				(req as any).validatedValue,
+			);
 			if ((req as any).fileValidationError) {
 				return responseSender(
 					res,
@@ -53,7 +59,11 @@ class OrderController {
 				try {
 					orderItems = JSON.parse(orderItems);
 				} catch (e) {
-					return responseSender(res, 400, "Invalid orderItems format");
+					return responseSender(
+						res,
+						400,
+						"Invalid orderItems format",
+					);
 				}
 			}
 			// Accept deliveryDate as ISO string or null
@@ -80,7 +90,10 @@ class OrderController {
 
 			// Documentation: Override staffId with authenticated staff only when the request
 			// did not explicitly provide a staffId. This preserves frontend-supplied staffId.
-			if ((req as any).staff?.staffId && (req as any).validatedValue.staffId == null) {
+			if (
+				(req as any).staff?.staffId &&
+				(req as any).validatedValue.staffId == null
+			) {
 				// Prevent designers from being auto-assigned to new orders
 				if ((req as any).staff?.role === "designer") {
 					// Leave staffId as null so the order can be assigned to an agent later
@@ -107,14 +120,20 @@ class OrderController {
 			}
 
 			if ((req as any).validatedValue.couponId) {
-				(newOrder as any).couponId = (req as any).validatedValue.couponId;
+				(newOrder as any).couponId = (
+					req as any
+				).validatedValue.couponId;
 			}
 			if (
 				(req as any).validatedValue.courierId &&
 				(req as any).validatedValue.courierAddress
 			) {
-				(newOrder as any).courierId = (req as any).validatedValue.courierId;
-				(newOrder as any).courierAddress = (req as any).validatedValue.courierAddress;
+				(newOrder as any).courierId = (
+					req as any
+				).validatedValue.courierId;
+				(newOrder as any).courierAddress = (
+					req as any
+				).validatedValue.courierAddress;
 			}
 
 			const paymentStatus =
@@ -185,7 +204,7 @@ class OrderController {
 				);
 
 			if (!isOrderStatusUpdated) {
-				console.log('failed in update order status');
+				console.log("failed in update order status");
 				return responseSender(
 					res,
 					500,
@@ -200,21 +219,23 @@ class OrderController {
 				order: createdOrder,
 			});
 		} catch (err: any) {
-			console.error('[OrderController.createOrder] ERROR:', err);
+			console.error("[OrderController.createOrder] ERROR:", err);
 			// cleanup process if database operation failed
 			if (req.files && Array.isArray(req.files)) {
 				req.files.forEach((file) => {
 					const filePath = path.join(file.destination, file.filename);
 					fs.unlink(filePath, (unlinkErr) => {
 						if (unlinkErr) {
-							console.error('[OrderController.createOrder] File cleanup error:', unlinkErr);
+							console.error(
+								"[OrderController.createOrder] File cleanup error:",
+								unlinkErr,
+							);
 						}
 					});
 				});
 			}
 			next(err);
 		}
-
 	};
 
 	createOrderRequest = async (
@@ -224,13 +245,25 @@ class OrderController {
 	) => {
 		try {
 			// Debug: log incoming staffId for order request
-			console.log("[OrderController.createOrderRequest] incoming validated staffId:", (req as any).validatedValue?.staffId);
-			console.log("[OrderController.createOrderRequest] validated payload:", (req as any).validatedValue);
+			console.log(
+				"[OrderController.createOrderRequest] incoming validated staffId:",
+				(req as any).validatedValue?.staffId,
+			);
+			console.log(
+				"[OrderController.createOrderRequest] validated payload:",
+				(req as any).validatedValue,
+			);
 			if ((req as any).fileValidationError) {
-				console.warn("[OrderController.createOrderRequest] 400 due to fileValidationError:", (req as any).fileValidationError, {
-					filesCount: Array.isArray(req.files) ? (req.files as Express.Multer.File[]).length : 0,
-					contentType: req.headers["content-type"],
-				});
+				console.warn(
+					"[OrderController.createOrderRequest] 400 due to fileValidationError:",
+					(req as any).fileValidationError,
+					{
+						filesCount: Array.isArray(req.files)
+							? (req.files as Express.Multer.File[]).length
+							: 0,
+						contentType: req.headers["content-type"],
+					},
+				);
 				return responseSender(
 					res,
 					400,
@@ -255,7 +288,10 @@ class OrderController {
 
 			// Documentation: Override staffId with authenticated staff only when the request
 			// did not explicitly provide a staffId. This preserves frontend-supplied staffId.
-			if ((req as any).staff?.staffId && (req as any).validatedValue.staffId == null) {
+			if (
+				(req as any).staff?.staffId &&
+				(req as any).validatedValue.staffId == null
+			) {
 				// Prevent designers from being auto-assigned to new orders
 				if ((req as any).staff?.role === "designer") {
 					newOrder.staffId = null;
@@ -282,8 +318,12 @@ class OrderController {
 				(req as any).validatedValue.courierId &&
 				(req as any).validatedValue.courierAddress
 			) {
-				(newOrder as any).courierId = (req as any).validatedValue.courierId;
-				(newOrder as any).courierAddress = (req as any).validatedValue.courierAddress;
+				(newOrder as any).courierId = (
+					req as any
+				).validatedValue.courierId;
+				(newOrder as any).courierAddress = (
+					req as any
+				).validatedValue.courierAddress;
 			}
 
 			// No additional customer lookups required here; the email comes from the request.
@@ -337,14 +377,17 @@ class OrderController {
 				},
 			);
 		} catch (err: any) {
-			console.error('[OrderController.createOrderRequest] ERROR:', err);
+			console.error("[OrderController.createOrderRequest] ERROR:", err);
 			// cleanup process if database operation failed
 			if (req.files && Array.isArray(req.files)) {
 				req.files.forEach((file) => {
 					const filePath = path.join(file.destination, file.filename);
 					fs.unlink(filePath, (unlinkErr) => {
 						if (unlinkErr) {
-							console.error('[OrderController.createOrderRequest] File cleanup error:', unlinkErr);
+							console.error(
+								"[OrderController.createOrderRequest] File cleanup error:",
+								unlinkErr,
+							);
 						}
 					});
 				});
@@ -356,7 +399,7 @@ class OrderController {
 	updateOrder = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const email = (req as any).validatedValue.email;
-			console.log('[OrderController.updateOrder] ENTER', {
+			console.log("[OrderController.updateOrder] ENTER", {
 				path: req.path,
 				method: req.method,
 				user: {
@@ -378,20 +421,32 @@ class OrderController {
 			const fetchedOrder = await this.orderService.getOrderById(
 				newOrder.orderId,
 			);
-			console.log('[OrderController.updateOrder] fetchedOrder', {
+			console.log("[OrderController.updateOrder] fetchedOrder", {
 				orderId: fetchedOrder?.orderId,
 				status: fetchedOrder?.status,
 				orderTotalPrice: fetchedOrder?.orderTotalPrice,
-				paymentsCount: Array.isArray(fetchedOrder?.payments) ? fetchedOrder.payments.length : 0,
+				paymentsCount: Array.isArray(fetchedOrder?.payments)
+					? fetchedOrder.payments.length
+					: 0,
 			});
 			if (!fetchedOrder) {
 				return responseSender(res, 404, "Order not found");
 			}
 
 			// Extract requester role. Allow admin/agent/designer to update without restrictions.
-			const requesterRole = (req as any).staff?.role || (req as any).admin?.role;
-			if (!requesterRole || !["admin", "agent", "designer", "offline-agent"].includes(requesterRole)) {
-				return responseSender(res, 403, "You do not have permission to update this order.");
+			const requesterRole =
+				(req as any).staff?.role || (req as any).admin?.role;
+			if (
+				!requesterRole ||
+				!["admin", "agent", "designer", "offline-agent"].includes(
+					requesterRole,
+				)
+			) {
+				return responseSender(
+					res,
+					403,
+					"You do not have permission to update this order.",
+				);
 			}
 
 			// Turned OFF: staff one-time update restriction. We no longer modify or check staffUpdateCount.
@@ -410,19 +465,25 @@ class OrderController {
 						totalPaidAmount += payment.amount;
 					}
 				});
-				console.log('[OrderController.updateOrder] totalPaidAmount computed', {
-					orderId: newOrder.orderId,
-					totalPaidAmount,
-					orderTotalPrice: fetchedOrder.orderTotalPrice,
-					payments,
-				});
-
-				if (totalPaidAmount !== fetchedOrder.orderTotalPrice) {
-					console.warn('[OrderController.updateOrder] cannot complete order - payment mismatch', {
+				console.log(
+					"[OrderController.updateOrder] totalPaidAmount computed",
+					{
 						orderId: newOrder.orderId,
 						totalPaidAmount,
 						orderTotalPrice: fetchedOrder.orderTotalPrice,
-					});
+						payments,
+					},
+				);
+
+				if (totalPaidAmount !== fetchedOrder.orderTotalPrice) {
+					console.warn(
+						"[OrderController.updateOrder] cannot complete order - payment mismatch",
+						{
+							orderId: newOrder.orderId,
+							totalPaidAmount,
+							orderTotalPrice: fetchedOrder.orderTotalPrice,
+						},
+					);
 					return responseSender(
 						res,
 						400,
@@ -432,14 +493,17 @@ class OrderController {
 			}
 
 			// Documentation: Pass the newStaffUpdateCount to the service layer.
-			console.log('[OrderController.updateOrder] calling orderService.updateOrder', {
-				orderId: newOrder.orderId,
-				status: newOrder.status,
-				deliveryDate: newOrder.deliveryDate,
-				courierAddress: newOrder.courierAddress,
-				additionalNotes: newOrder.additionalNotes,
-				newStaffUpdateCount,
-			});
+			console.log(
+				"[OrderController.updateOrder] calling orderService.updateOrder",
+				{
+					orderId: newOrder.orderId,
+					status: newOrder.status,
+					deliveryDate: newOrder.deliveryDate,
+					courierAddress: newOrder.courierAddress,
+					additionalNotes: newOrder.additionalNotes,
+					newStaffUpdateCount,
+				},
+			);
 
 			const updatedOrder = await this.orderService.updateOrder(
 				newOrder.orderId,
@@ -450,7 +514,10 @@ class OrderController {
 				newStaffUpdateCount, // remains undefined now that restriction is disabled
 			);
 
-			console.log('[OrderController.updateOrder] orderService.updateOrder result', { orderId: newOrder.orderId, updatedOrder });
+			console.log(
+				"[OrderController.updateOrder] orderService.updateOrder result",
+				{ orderId: newOrder.orderId, updatedOrder },
+			);
 
 			if (!updatedOrder) {
 				return responseSender(
@@ -469,45 +536,60 @@ class OrderController {
 						(fetchedOrder.orderTotalPrice *
 							staff.commissionPercentage) /
 						100;
-					console.log('[OrderController.updateOrder] commission calculation', {
-						orderId: newOrder.orderId,
-						staffId: staff.staffId,
-						commission,
-						requesterRole,
-					});
-					console.log('[OrderController.updateOrder] commission crediting is currently disabled (skipped)');
+					console.log(
+						"[OrderController.updateOrder] commission calculation",
+						{
+							orderId: newOrder.orderId,
+							staffId: staff.staffId,
+							commission,
+							requesterRole,
+						},
+					);
+					console.log(
+						"[OrderController.updateOrder] commission crediting is currently disabled (skipped)",
+					);
 				}
 			}
-												try {
-													// OrderService.updateOrder returns boolean. Retrieve the order to get fresh data.
-													const afterUpdate = await this.orderService.getOrderById(newOrder.orderId as any);
+			try {
+				// OrderService.updateOrder returns boolean. Retrieve the order to get fresh data.
+				const afterUpdate = await this.orderService.getOrderById(
+					newOrder.orderId as any,
+				);
 
-													const orderIdForEmail = afterUpdate?.orderId ?? newOrder.orderId;
-													const statusForEmail = afterUpdate?.status ?? newOrder.status;
-													const customerNameForEmail = fetchedOrder.customerName || fetchedOrder.customerEmail || '';
+				const orderIdForEmail =
+					afterUpdate?.orderId ?? newOrder.orderId;
+				const statusForEmail = afterUpdate?.status ?? newOrder.status;
+				const customerNameForEmail =
+					fetchedOrder.customerName ||
+					fetchedOrder.customerEmail ||
+					"";
 
-													const orderUrl = frontendLandingPageUrl
-														? `${frontendLandingPageUrl}/orders/${orderIdForEmail}`
-														: undefined;
+				const orderUrl = frontendLandingPageUrl
+					? `${frontendLandingPageUrl}/orders/${orderIdForEmail}`
+					: undefined;
 
-													await this.emailService.sendEmail(
-														email,
-														`Order status updated`,
-														"order-update-notification",
-														{
-															customerName: customerNameForEmail,
-															orderId: orderIdForEmail,
-															status: statusForEmail,
-															orderUrl,
-														},
-													);
-												} catch (mailErr) {
-													// don't fail the request if email sending fails; log for operators
-													console.error('[OrderController.updateOrder] failed to send order update email', mailErr);
-												}
+				await this.emailService.sendEmail(
+					email,
+					`Order status updated`,
+					"order-update-notification",
+					{
+						customerName: customerNameForEmail,
+						orderId: orderIdForEmail,
+						status: statusForEmail,
+						orderUrl,
+					},
+				);
+				console.log("[OrderController.updateOrder] email sent successfully to ", email);
+			} catch (mailErr) {
+				// don't fail the request if email sending fails; log for operators
+				console.error(
+					"[OrderController.updateOrder] failed to send order update email",
+					mailErr,
+				);
+			}
 			return responseSender(res, 200, "Order updated successfully.");
 		} catch (err: any) {
-			console.error('[OrderController.updateOrder] ERROR:', err);
+			console.error("[OrderController.updateOrder] ERROR:", err);
 			next(err);
 		}
 	};
@@ -538,16 +620,23 @@ class OrderController {
 				customerPhone: (req as any).validatedValue.customerPhone,
 			};
 
-			console.log("[OrderController.createOrderPayment] Payload", newPayment);
+			console.log(
+				"[OrderController.createOrderPayment] Payload",
+				newPayment,
+			);
 
 			if (newPayment.paymentMethod === "cod-payment") {
-				const createdPayment = await this.paymentService.createCashPayment(
-					newPayment.orderId,
-					newPayment.amount,
-				);
+				const createdPayment =
+					await this.paymentService.createCashPayment(
+						newPayment.orderId,
+						newPayment.amount,
+					);
 
 				if (!createdPayment) {
-					console.warn("[OrderController.createOrderPayment] 500 - Failed to create COD payment", newPayment);
+					console.warn(
+						"[OrderController.createOrderPayment] 500 - Failed to create COD payment",
+						newPayment,
+					);
 					return responseSender(
 						res,
 						500,
@@ -556,12 +645,21 @@ class OrderController {
 				}
 
 				// update the order status
-				const order = await this.orderService.getOrderById(newPayment.orderId);
+				const order = await this.orderService.getOrderById(
+					newPayment.orderId,
+				);
 				if (!order) {
-					console.warn("[OrderController.createOrderPayment] 500 - Order not found for status update", {
-						orderId: newPayment.orderId,
-					});
-					return responseSender(res, 500, "Order not found. Please try again.");
+					console.warn(
+						"[OrderController.createOrderPayment] 500 - Order not found for status update",
+						{
+							orderId: newPayment.orderId,
+						},
+					);
+					return responseSender(
+						res,
+						500,
+						"Order not found. Please try again.",
+					);
 				}
 
 				const totalPaidAmount = order.payments.reduce((acc, curr) => {
@@ -572,15 +670,20 @@ class OrderController {
 				const isOrderStatusUpdated =
 					await this.orderService.updateOrderPaymentStatus(
 						newPayment.orderId,
-						totalPaidAmount === order.orderTotalPrice ? "paid" : "partial",
+						totalPaidAmount === order.orderTotalPrice
+							? "paid"
+							: "partial",
 					);
 
 				if (!isOrderStatusUpdated) {
-					console.warn("[OrderController.createOrderPayment] 500 - Failed to update order status", {
-						orderId: newPayment.orderId,
-						totalPaidAmount,
-						orderTotal: order.orderTotalPrice,
-					});
+					console.warn(
+						"[OrderController.createOrderPayment] 500 - Failed to update order status",
+						{
+							orderId: newPayment.orderId,
+							totalPaidAmount,
+							orderTotal: order.orderTotalPrice,
+						},
+					);
 					return responseSender(
 						res,
 						500,
@@ -594,14 +697,24 @@ class OrderController {
 						| "order-request-received"
 						| "consultation-in-progress"
 						| "awaiting-advance-payment"
-					>(["order-request-received", "consultation-in-progress", "awaiting-advance-payment"]);
-					if (totalPaidAmount > 0 && requestedStatuses.has(order.status as any)) {
-						console.log("[OrderController.createOrderPayment] Moving order to active after COD payment", {
-							orderId: order.orderId,
-							fromStatus: order.status,
-							totalPaidAmount,
-							orderTotal: order.orderTotalPrice,
-						});
+					>([
+						"order-request-received",
+						"consultation-in-progress",
+						"awaiting-advance-payment",
+					]);
+					if (
+						totalPaidAmount > 0 &&
+						requestedStatuses.has(order.status as any)
+					) {
+						console.log(
+							"[OrderController.createOrderPayment] Moving order to active after COD payment",
+							{
+								orderId: order.orderId,
+								fromStatus: order.status,
+								totalPaidAmount,
+								orderTotal: order.orderTotalPrice,
+							},
+						);
 						const moved = await this.orderService.updateOrder(
 							order.orderId,
 							order.deliveryDate,
@@ -611,11 +724,18 @@ class OrderController {
 						);
 
 						if (!moved) {
-							console.warn("[OrderController.createOrderPayment] 500 - Failed to move order to active after payment", {
-								orderId: order.orderId,
-								fromStatus: order.status,
-							});
-							return responseSender(res, 500, "Order update failed. Please try again.");
+							console.warn(
+								"[OrderController.createOrderPayment] 500 - Failed to move order to active after payment",
+								{
+									orderId: order.orderId,
+									fromStatus: order.status,
+								},
+							);
+							return responseSender(
+								res,
+								500,
+								"Order update failed. Please try again.",
+							);
 						}
 
 						// notify clients of status change
@@ -626,8 +746,15 @@ class OrderController {
 						});
 					}
 				} catch (moveErr) {
-					console.error("[OrderController.createOrderPayment] ERROR moving order to active:", moveErr);
-					return responseSender(res, 500, "Order update failed. Please try again.");
+					console.error(
+						"[OrderController.createOrderPayment] ERROR moving order to active:",
+						moveErr,
+					);
+					return responseSender(
+						res,
+						500,
+						"Order update failed. Please try again.",
+					);
 				}
 
 				return responseSender(
@@ -642,13 +769,14 @@ class OrderController {
 
 			// Online payment flow
 			if (newPayment.paymentMethod === "online-payment") {
-				const createdPayment = await this.paymentService.createOnlinePayment(
-					newPayment.orderId,
-					newPayment.amount,
-					newPayment.customerName,
-					newPayment.customerEmail,
-					newPayment.customerPhone,
-				);
+				const createdPayment =
+					await this.paymentService.createOnlinePayment(
+						newPayment.orderId,
+						newPayment.amount,
+						newPayment.customerName,
+						newPayment.customerEmail,
+						newPayment.customerPhone,
+					);
 
 				if (!createdPayment) {
 					console.warn(
@@ -662,18 +790,23 @@ class OrderController {
 					);
 				}
 
-				return responseSender(res, 201, "Order payment request created successfully.", {
-					...createdPayment,
-				});
+				return responseSender(
+					res,
+					201,
+					"Order payment request created successfully.",
+					{
+						...createdPayment,
+					},
+				);
 			}
 		} catch (err: any) {
-			console.error('[OrderController.createOrderPayment] ERROR:', err);
+			console.error("[OrderController.createOrderPayment] ERROR:", err);
 			// Map known validation/service errors to HTTP 400 so frontend gets a proper client error
-			const msg = err?.message || '';
+			const msg = err?.message || "";
 			if (
-				msg.includes('exceeds remaining due') ||
-				msg.includes('already fully paid') ||
-				msg.includes('Invalid payment amount')
+				msg.includes("exceeds remaining due") ||
+				msg.includes("already fully paid") ||
+				msg.includes("Invalid payment amount")
 			) {
 				return responseSender(res, 400, msg);
 			}
@@ -782,8 +915,15 @@ class OrderController {
 					| "order-request-received"
 					| "consultation-in-progress"
 					| "awaiting-advance-payment"
-				>(["order-request-received", "consultation-in-progress", "awaiting-advance-payment"]);
-				if (totalPaidAmount > 0 && requestedStatuses.has(order.status as any)) {
+				>([
+					"order-request-received",
+					"consultation-in-progress",
+					"awaiting-advance-payment",
+				]);
+				if (
+					totalPaidAmount > 0 &&
+					requestedStatuses.has(order.status as any)
+				) {
 					const moved = await this.orderService.updateOrder(
 						order.orderId,
 						order.deliveryDate,
@@ -800,7 +940,10 @@ class OrderController {
 					}
 				}
 			} catch (moveErr) {
-				console.error("[OrderController.paymentSuccess] ERROR moving order to active:", moveErr);
+				console.error(
+					"[OrderController.paymentSuccess] ERROR moving order to active:",
+					moveErr,
+				);
 			}
 
 			if (!transaction) {
@@ -811,7 +954,7 @@ class OrderController {
 				`${frontendLandingPageUrl}/success-payment?transaction=${JSON.stringify(transaction)}`,
 			);
 		} catch (err: any) {
-			console.error('[OrderController.paymentSuccess] ERROR:', err);
+			console.error("[OrderController.paymentSuccess] ERROR:", err);
 			next(err);
 		}
 	};
@@ -845,7 +988,7 @@ class OrderController {
 
 			return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
 		} catch (err: any) {
-			console.error('[OrderController.paymentFail] ERROR:', err);
+			console.error("[OrderController.paymentFail] ERROR:", err);
 			next(err);
 		}
 	};
@@ -879,11 +1022,10 @@ class OrderController {
 
 			return res.redirect(`${frontendLandingPageUrl}/failed-payment`);
 		} catch (err: any) {
-			console.error('[OrderController.paymentCancel] ERROR:', err);
+			console.error("[OrderController.paymentCancel] ERROR:", err);
 			next(err);
 		}
 	};
-
 
 	getOrdersByCustomer = async (
 		req: Request,
@@ -917,7 +1059,7 @@ class OrderController {
 				orders,
 			});
 		} catch (err: any) {
-			console.error('[OrderController.getOrdersByCustomer] ERROR:', err);
+			console.error("[OrderController.getOrdersByCustomer] ERROR:", err);
 			next(err);
 		}
 	};
@@ -929,13 +1071,19 @@ class OrderController {
 			if (!customer?.customerId) {
 				return responseSender(res, 401, "Unauthorized.");
 			}
-			const orders = await this.orderService.getOrdersByCustomer(customer.customerId);
+			const orders = await this.orderService.getOrdersByCustomer(
+				customer.customerId,
+			);
 			if (!orders) {
-				return responseSender(res, 200, "No orders found.", { orders: [] });
+				return responseSender(res, 200, "No orders found.", {
+					orders: [],
+				});
 			}
-			return responseSender(res, 200, "Orders fetched successfully.", { orders });
+			return responseSender(res, 200, "Orders fetched successfully.", {
+				orders,
+			});
 		} catch (err: any) {
-			console.error('[OrderController.getMyOrders] ERROR:', err);
+			console.error("[OrderController.getMyOrders] ERROR:", err);
 			next(err);
 		}
 	};
@@ -963,7 +1111,7 @@ class OrderController {
 
 			return responseSender(res, 200, "Order deleted successfully.");
 		} catch (err: any) {
-			console.error('[OrderController.deleteOrder] ERROR:', err);
+			console.error("[OrderController.deleteOrder] ERROR:", err);
 			next(err);
 		}
 	};
@@ -993,7 +1141,11 @@ class OrderController {
 			}
 
 			// Apply staffId filter ONLY for agents
-			if ((requesterRole === "agent" || requesterRole === "offline-agent") && staffId) {
+			if (
+				(requesterRole === "agent" ||
+					requesterRole === "offline-agent") &&
+				staffId
+			) {
 				// Agents see only their assigned orders
 				filter.staffId = staffId; // 🔧 FIX: Actually add the staffId to the filter
 			}
@@ -1055,7 +1207,11 @@ class OrderController {
 
 			// 🎯 FINAL FILTER DEBUG - Capture exact parameters going to service
 			// 🎯 RBAC IMPLEMENTATION: Apply staffId filter only for agents
-			if ((requesterRole === "agent" || requesterRole === "offline-agent") && staffId) {
+			if (
+				(requesterRole === "agent" ||
+					requesterRole === "offline-agent") &&
+				staffId
+			) {
 				filter.staffId = staffId;
 			} else {
 				// Remove any existing staffId filter for admin/designer
@@ -1109,15 +1265,17 @@ class OrderController {
 							: requesterRole === "designer"
 								? "Designer sees all orders (for design work)"
 								: requesterRole === "offline-agent"
-								? "Offline-agent sees only own orders"
-								: "Admin sees all orders",
+									? "Offline-agent sees only own orders"
+									: "Admin sees all orders",
 					hasStaffIdFilter:
-							(requesterRole === "agent" || requesterRole === "offline-agent") && Boolean(staffId),
+						(requesterRole === "agent" ||
+							requesterRole === "offline-agent") &&
+						Boolean(staffId),
 					timestamp: new Date().toISOString(),
 				},
 			});
 		} catch (err: any) {
-			console.error('[OrderController.getAllOrders] ERROR:', err);
+			console.error("[OrderController.getAllOrders] ERROR:", err);
 			next(err);
 		}
 	};
