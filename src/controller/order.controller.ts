@@ -15,6 +15,8 @@ import { frontendLandingPageUrl } from "../config/dotenv.config";
 import StaffService from "../service/staff.service";
 import CustomerService from "../service/customer.service"; // Documentation: Re-added working CustomerService import
 import EmailService from "../service/email.service";
+import { generateInvoicePDF } from "../utils/generateInvoicePDF";
+import { request } from "axios";
 
 class OrderController {
 	private orderService: OrderService;
@@ -1033,6 +1035,42 @@ class OrderController {
 		}
 	};
 
+	downloadInvoice = async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			const orderId = Number((req as any).validatedValue.orderId);
+			if (!orderId) {
+				return responseSender(res, 400, "Please provide orderId.");
+			}
+			const order = await this.orderService.getOrderById(orderId);
+			if (!order) {
+				return responseSender(res, 404, "Order not found.");
+			}
+			const requestCustomer = (req as any).customer;
+			if(requestCustomer && order.customerId !== requestCustomer.customerId) {
+				return responseSender(res, 403, "You do not have permission to access this invoice.");
+			}
+			const invoiceBuffer =
+				await generateInvoicePDF(order);
+			if (!invoiceBuffer) {
+				return responseSender(
+					res,
+					500,
+					"Failed to generate invoice. Please try again.",
+				);
+			}
+			console.log("PDF buffer length:", invoiceBuffer.length);
+			res.setHeader("Content-Type", "application/pdf");
+			res.setHeader(
+				"Content-Disposition",
+				`attachment; filename=invoice-order-${orderId}.pdf`,
+			);
+			return res.end(invoiceBuffer);
+
+		}catch (err: any) {
+			console.error("[OrderController.downloadInvoice] ERROR:", err);
+			next(err);
+		}
+	};
 	getOrdersByCustomer = async (
 		req: Request,
 		res: Response,

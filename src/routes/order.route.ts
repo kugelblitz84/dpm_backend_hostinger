@@ -137,6 +137,13 @@ orderRouter.get(
 	strictLimiter,
 	orderController.paymentCancel,
 );
+// Download invoice PDF
+orderRouter.get(
+	"/:orderId/invoice",
+	authMiddleware.authenticate(["admin", "agent", "designer", "offline-agent", "customer"]),
+	orderMiddleware.validateOrderDeletion,
+	orderController.downloadInvoice,
+);
 orderRouter.delete(
 	"/:orderId",
 	// Documentation: Order deletion is restricted to 'admin' roles only.
